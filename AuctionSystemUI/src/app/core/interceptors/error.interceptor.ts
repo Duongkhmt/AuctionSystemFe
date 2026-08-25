@@ -19,13 +19,13 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       let errorMessage = 'Lỗi kết nối máy chủ';
       let toastTitle = 'Cảnh Báo / Lỗi Hệ Thống';
 
-      // Phân loại nhãn Toast trực quan dựa theo Mã Phản Hồi Redis / Redisson Lock
+      // Phân loại nhãn Toast trực quan dựa theo Mã Phản Hồi từ Spring Boot Backend & Redis Atomic
       if (error.status === 409) {
         toastTitle = '⚡ Tranh Chấp Khóa (Redis Lock)';
       } else if (error.status === 429) {
         toastTitle = '⏳ Giới Hạn Tốc Độ (Rate Limit)';
       } else if (error.status === 400) {
-        toastTitle = '⚠️ Yêu Cầu Không Hợp Lệ';
+        toastTitle = '⚠️ Thông Báo Đặt Giá / Yêu Cầu';
       } else if (error.status === 403) {
         toastTitle = '🚫 Không Có Quyền Truy Cập';
       }

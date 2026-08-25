@@ -124,7 +124,8 @@ src/app/
 ### 2. Chuyển Đổi Định Dạng Tự Động (`snakeToCamelKeys`)
 Dữ liệu gửi từ Spring Boot Backend sử dụng định dạng `snake_case` (như `product_title`, `winning_price`, `shipping_address`). Tại tầng Service (`order.service.ts`, `seller-api.service.ts`), dữ liệu tự động được lọc qua hàm đệ quy `snakeToCamelKeys` để chuyển đổi mượt mà sang `camelCase` (`productTitle`, `winningPrice`, `shippingAddress`), giúp mã nguồn TypeScript luôn nhất quán.
 
-### 3. Đấu Giá Trực Tiếp Realtime & Anti-Sniping Window
+### 3. Đấu Giá Trực Tiếp Realtime & Redis Atomic Concurrency Integration
+- **Tích hợp Đấu Giá Siêu Tốc Redis Atomic:** Kết nối API đặt giá siêu tốc `< 2ms` với Backend. Khi người dùng bị thua giá (outbid) hoặc trả giá không hợp lệ, `errorInterceptor` tự động giải mã thông báo từ Spring Boot và hiển thị Toast cảnh báo màu đỏ trực quan lập tức mà không gây đứng trang.
 - **Live Countdown Pipe (`auctionTimer`):** Tính toán và cập nhật nhịp tim đồng hồ từng giây (`HH:mm:ss`).
 - **Auto Polling Engine:** Tự động gửi request 3 giây/lần ở trang chi tiết sản phẩm để lấy số tiền thầu mới nhất mà không gây giật lag màn hình.
 - **Cửa sổ chống bắn tỉa (Anti-Sniping):** Khi người mua đặt thầu trong 3 phút cuối, hệ thống hiển thị Toast thông báo gia hạn thêm thời gian phiên thầu.
