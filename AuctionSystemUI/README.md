@@ -54,7 +54,7 @@ Hệ thống cung cấp trải nghiệm giao diện đẳng cấp, trực quan h
 
 ### Bước 1: Clone dự án
 ```bash
-git clone https://github.com/Duongkhmt/AuctionSystem.git
+git clone https://github.com/Duongkhmt/AuctionSystemFe.git
 cd Frontend/AuctionSystemUI
 ```
 
@@ -128,7 +128,7 @@ Dữ liệu gửi từ Spring Boot Backend sử dụng định dạng `snake_cas
 - **Tích hợp Đấu Giá Siêu Tốc Redis Atomic:** Kết nối API đặt giá siêu tốc `< 2ms` với Backend. Khi người dùng bị thua giá (outbid) hoặc trả giá không hợp lệ, `errorInterceptor` tự động giải mã thông báo từ Spring Boot và hiển thị Toast cảnh báo màu đỏ trực quan lập tức mà không gây đứng trang.
 - **Live Countdown Pipe (`auctionTimer`):** Tính toán và cập nhật nhịp tim đồng hồ từng giây (`HH:mm:ss`).
 - **Auto Polling Engine:** Tự động gửi request 3 giây/lần ở trang chi tiết sản phẩm để lấy số tiền thầu mới nhất mà không gây giật lag màn hình.
-- **Cửa sổ chống bắn tỉa (Anti-Sniping):** Khi người mua đặt thầu trong 3 phút cuối, hệ thống hiển thị Toast thông báo gia hạn thêm thời gian phiên thầu.
+- **Chốt thầu thời gian cứng (Hard-Close Mode):** Đếm ngược đồng hồ chính xác tới thời điểm kết thúc phiên (`endTime`) và tự động chốt thầu ngầm (hết giờ là hết giờ).
 
 ### 4. Quy Trình Xử Lý Đơn Hàng Hậu Đấu Giá (Post-Auction Order Settlement)
 ```text

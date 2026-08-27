@@ -37,6 +37,6 @@ Hiển thị danh sách sản phẩm đang đấu giá công khai cho toàn bộ
 - **Tính năng nổi bật**:
   - **Live Countdown**: Hiển thị đồng hồ đếm ngược với `AuctionTimerPipe`.
   - **Đặt Giá Ngay (Place Bid)**: Gọi `BiddingService.placeBid()` kèm giá thầu và Proxy Bidding Max Price.
-  - **Anti-Sniping Detection**: Hiển thị Toast cảnh báo nếu thời gian vừa được gia hạn thêm.
+  - **Hard-Close Mode**: Đếm ngược đồng hồ chính xác tới thời điểm kết thúc phiên và chốt thầu (hết giờ là hết giờ).
   - **Mua Ngay Giá Cố Định**: Nút `submitBuyNow()` cho loại hình đấu giá `BUY_NOW`.
   - **Lịch Sử Thầu (Bid History Log)**: Nạp danh sách nhảy giá thời gian thực từ `BiddingService.getBidHistory()`.
