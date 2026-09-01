@@ -12,7 +12,7 @@ import { UserSessionService } from '../../../../core/auth/user-session.service';
       <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-xl">
         <h1 class="text-2xl font-black text-white mb-2">Lịch Sử Đặt Giá Cá Nhân</h1>
         <p class="text-xs text-slate-400">
-          Danh sách các thầu bạn đã đặt với tư cách <strong>{{ userSession.currentUser().name }}</strong> (ID: {{ userSession.currentUser().id }}).
+          Danh sách các thầu bạn đã đặt với tư cách <strong>{{ userSession.currentUser()?.name || 'Khách' }}</strong> (ID: {{ userSession.currentUser()?.id || 0 }}).
         </p>
       </div>
 

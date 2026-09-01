@@ -216,10 +216,9 @@ export class CheckoutModalComponent {
       return;
     }
 
-    const bidderId = this.userSession.currentUser().id;
     this.submitting.set(true);
 
-    this.orderService.checkout(bidderId, this.order.orderId, {
+    this.orderService.checkout(this.order.orderId, {
       shippingAddress: addr,
       phoneNumber: phone,
       paymentMethod: this.paymentMethod
