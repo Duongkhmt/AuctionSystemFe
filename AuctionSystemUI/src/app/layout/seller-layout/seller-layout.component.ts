@@ -39,8 +39,8 @@ import { ToastContainerComponent } from '../../shared/components/toast-container
             S2
           </div>
           <div>
-            <p class="text-xs font-semibold text-white">{{ userSession.currentUser().name }}</p>
-            <p class="text-[10px] text-slate-400">Seller ID: {{ userSession.currentUser().id }}</p>
+            <p class="text-xs font-semibold text-white">{{ userSession.currentUser()?.name || 'Khách' }}</p>
+            <p class="text-[10px] text-slate-400">Seller ID: {{ userSession.currentUser()?.id || 0 }}</p>
           </div>
         </div>
       </aside>
