@@ -47,25 +47,19 @@ import { LanguageService } from '../../core/services/language.service';
             </a>
 
             <a
-              routerLink="/"
-              [queryParams]="{ categoryId: 'ALL' }"
+              routerLink="/admin/categories"
+              routerLinkActive="bg-[#07120d] text-[#c5a059] border-l-2 border-[#c5a059]"
               class="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-slate-400 hover:bg-[#07120d] hover:text-slate-200 transition-all"
             >
               <span>Quản lý danh mục</span>
             </a>
 
             <a
-              routerLink="/"
+              routerLink="/admin/users"
+              routerLinkActive="bg-[#07120d] text-[#c5a059] border-l-2 border-[#c5a059]"
               class="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-slate-400 hover:bg-[#07120d] hover:text-slate-200 transition-all"
             >
               <span>Người dùng</span>
-            </a>
-
-            <a
-              routerLink="/"
-              class="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-slate-400 hover:bg-[#07120d] hover:text-slate-200 transition-all"
-            >
-              <span>Đơn hàng & khiếu nại</span>
             </a>
           </nav>
         </div>
@@ -100,7 +94,7 @@ import { LanguageService } from '../../core/services/language.service';
             <div class="flex items-center gap-2 text-xs text-slate-400">
               <span>Ban Quản Trị</span>
               <span>/</span>
-              <span class="text-[#c5a059] font-bold">Quản lý bài đăng</span>
+              <span class="text-[#c5a059] font-bold">Admin Portal</span>
             </div>
           </div>
         </header>

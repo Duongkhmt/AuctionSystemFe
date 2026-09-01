@@ -1,23 +1,32 @@
-# Feature: Admin Moderation (Cổng Quản Lý Bài Đăng Ban Quản Trị)
+# Feature: Admin Moderation & Management (Ban Quản Trị Hệ Thống)
 
 # Mục đích
-Trang chuyên biệt dành riêng cho Ban Quản Trị (`ADMIN`) để thẩm định và kiểm duyệt các bài đăng mới ở trạng thái `PENDING` trước khi cho phép công khai lên Sàn Đấu Giá.
+Cổng quản trị toàn diện dành riêng cho Ban Quản Trị (`ADMIN`) bao gồm: Thẩm định & kiểm duyệt bài đăng (`/admin`), Quản lý danh mục sản phẩm (`/admin/categories`) và Quản lý tài khoản người dùng (`/admin/users`).
 
 ---
 
 # Cấu trúc & Chi tiết từng File
 
 ### 1. `admin.routes.ts`
-- **Tuyến đường**: `''`: Render `PendingApprovalComponent`.
+- **Tuyến đường**:
+  - `''`: Render `PendingApprovalComponent` (Quản lý bài đăng chờ duyệt).
+  - `'categories'`: Render `CategoryManagementComponent` (Quản lý danh mục sản phẩm).
+  - `'users'`: Render `UserManagementComponent` (Quản lý tài khoản người dùng).
 
 ---
 
 ### 2. `admin-api.service.ts`
-- **Mục đích**: Gọi các REST APIs kiểm duyệt bài đăng của Admin.
+- **Mục đích**: Giao tiếp với toàn bộ nhóm REST APIs quản trị của Admin trong `AdminProductController.java`:
 - **Methods**:
   - `getPendingProducts()`: `GET /v1/admin/products/pending`
   - `approveProduct(id)`: `PUT /v1/admin/products/{id}/approve`
-  - `rejectProduct(id, rejectDTO)`: `PUT /v1/admin/products/{id}/reject` kèm lý do từ chối `rejectionReason`.
+  - `rejectProduct(id, rejectDTO)`: `PUT /v1/admin/products/{id}/reject`
+  - `getAllCategories()`: `GET /v1/admin/products/categories`
+  - `createCategory(request)`: `POST /v1/admin/products/categories`
+  - `updateCategory(id, request)`: `PUT /v1/admin/products/categories/{id}`
+  - `deleteCategory(id)`: `DELETE /v1/admin/products/categories/{id}`
+  - `getAllUsers()`: `GET /v1/admin/products/users`
+  - `updateUserStatus(id, request)`: `PUT /v1/admin/products/users/{id}/status`
 
 ---
 
@@ -25,18 +34,31 @@ Trang chuyên biệt dành riêng cho Ban Quản Trị (`ADMIN`) để thẩm đ
 - **Mục đích**: Khung giao diện Admin Portal phong cách Luxury Dark Emerald (`#09110d` & `#050b08`).
 - **Sidebar Trái**:
   - Logo thương hiệu **AuctionHub — BAN QUẢN TRỊ**.
-  - Menu điều hướng: **Quản lý bài đăng** (có badge đếm số lượng bài chờ duyệt), **Quản lý danh mục**, **Người dùng**, **Đơn hàng & khiếu nại**.
+  - Menu điều hướng: **Quản lý bài đăng** (`/admin`), **Quản lý danh mục** (`/admin/categories`), **Người dùng** (`/admin/users`).
   - Khối Profile Admin góc dưới dạng hình thoi kim cương Gold (`Admin System` - Admin ID: 1).
 - **Thanh Header**:
-  - Đặt liên kết nhỏ tinh tế `← Về sàn đấu giá` ở góc trái bên cạnh đường dẫn `Ban Quản Trị / Quản lý bài đăng`.
+  - Đặt liên kết nhỏ tinh tế `← Về sàn đấu giá` ở góc trái bên cạnh đường dẫn `Ban Quản Trị / Admin Portal`.
 
 ---
 
 ### 4. `pending-approval.component.ts`
-- **Mục đích**: Màn hình danh sách bài chờ duyệt thiết kế dạng hàng ngang (Horizontal Rows) chuẩn mockup.
-- **Thành phần giao diện**:
-  - Header: Subtitle `— THẨM ĐỊNH NỘI DUNG`, Tiêu đề `Duyệt bài đăng chờ xuất bản`.
-  - Filter Tabs: `Xem: Có bài chờ duyệt` (Active Gold Button) và `Xem: Đã xử lý hết`.
-  - Danh sách bài chờ duyệt: Thẻ hàng ngang hiển thị ảnh thumbnail, nhãn `LOT — CHỜ CẤP MÃ`, tên sản phẩm, thông tin `Người bán`, `Danh mục`, `Giá khởi điểm` và cặp nút bấm **Từ chối** / **Phê duyệt**.
-- **Tính năng Duyệt (Approve)**: Chuyển bài sang `APPROVED` để phiên thầu khởi chạy theo lịch.
-- **Tính năng Từ Chối (Reject)**: Mở Modal nhập lý do từ chối `rejectionReason` gửi tới Người bán.
+- **Mục đích**: Màn hình kiểm duyệt các bài đăng chờ xuất bản dạng hàng ngang (Horizontal Rows).
+
+---
+
+### 5. `category-management.component.ts`
+- **Mục đích**: Màn hình quản lý toàn bộ danh mục sản phẩm đấu giá.
+- **Tính năng**:
+  - Tìm kiếm danh mục theo tên, lọc theo trạng thái (`Đang hoạt động`, `Đã ẩn`).
+  - Bảng dữ liệu chi tiết danh mục, nút **➕ Thêm danh mục mới**, nút **✏️ Sửa** và **🔒 Ẩn / 🔓 Hiện**.
+  - Popup Modal thêm/sửa danh mục có chọn danh mục cha (Parent Category) và bật/tắt hiển thị.
+
+---
+
+### 6. `user-management.component.ts`
+- **Mục đích**: Màn hình quản lý tất cả tài khoản thành viên trong hệ thống.
+- **Tính năng**:
+  - Thống kê tổng số tài khoản, số người dùng `ACTIVE` và bị `BANNED`.
+  - Tìm kiếm theo Username, Email, ID; lọc theo trạng thái tài khoản.
+  - Hiển thị chi tiết vai trò, cảnh báo số lần bùng đơn (`unpaidStrikeCount`), thời hạn bị cấm thầu (`bannedUntil`).
+  - Nút hành động nhanh **🚫 Khóa tài khoản** / **🔓 Mở khóa tài khoản**.

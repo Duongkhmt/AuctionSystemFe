@@ -17,10 +17,18 @@ export const API_ENDPOINTS = {
   SELLER_CANCEL_AUCTION: (id: number) => `${API_BASE_URL}/v1/sellers/me/products/${id}/cancel`,
   SELLER_RELIST_AUCTION: (auctionId: number) => `${API_BASE_URL}/v1/sellers/me/products/${auctionId}/relist`,
 
-  // Admin Moderation Endpoints
+  // Admin Moderation & Management Endpoints
   ADMIN_PENDING_PRODUCTS: `${API_BASE_URL}/v1/admin/products/pending`,
   ADMIN_APPROVE_PRODUCT: (id: number) => `${API_BASE_URL}/v1/admin/products/${id}/approve`,
   ADMIN_REJECT_PRODUCT: (id: number) => `${API_BASE_URL}/v1/admin/products/${id}/reject`,
+
+  // Admin Category Management Endpoints
+  ADMIN_CATEGORIES: `${API_BASE_URL}/v1/admin/products/categories`,
+  ADMIN_CATEGORY_BY_ID: (id: number) => `${API_BASE_URL}/v1/admin/products/categories/${id}`,
+
+  // Admin User Management Endpoints
+  ADMIN_USERS: `${API_BASE_URL}/v1/admin/products/users`,
+  ADMIN_USER_STATUS: (id: number) => `${API_BASE_URL}/v1/admin/products/users/${id}/status`,
 
   // Categories
   CATEGORIES: `${API_BASE_URL}/v1/categories`,
