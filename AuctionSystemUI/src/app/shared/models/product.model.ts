@@ -10,7 +10,9 @@ export interface ProductImageResponse {
 export interface ProductResponse {
   productId: number;
   sellerId: number;
+  sellerName?: string;
   categoryId: number;
+  categoryName?: string;
   title: string;
   description: string;
   attributes: Record<string, any>;

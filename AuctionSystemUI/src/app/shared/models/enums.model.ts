@@ -26,4 +26,6 @@ export interface UserSession {
   name: string;
   email: string;
   role: UserRole;
+  accessToken?: string;
+  refreshToken?: string;
 }

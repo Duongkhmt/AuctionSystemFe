@@ -3,52 +3,81 @@ import { LanguageService } from '../../core/services/language.service';
 
 /**
  * ====================================================================================
- * 🌐 AUTO TRANSLATE PIPE (Custom Pipe Tự Động Dịch Nội Dung Động Do Người Dùng Nhập)
+ * 🌐 AUTO TRANSLATE PIPE (Custom Pipe Tự Động Dịch 2 Chiều VN ↔ EN Toàn Diện)
  * ====================================================================================
- * Chuyển đổi tự động Tiêu đề, Mô tả và Thuộc tính động của sản phẩm do Người bán nhập bằng Tiếng Việt
- * sang Tiếng Anh chuẩn xác theo thời gian thực khi người dùng bấm chọn nút 🇬🇧 EN trên Header.
- * Thiết lập `pure: false` để tự động tính toán lại ngay khi đổi ngôn ngữ.
+ * Tự động dịch Tên danh mục, Tiêu đề, Mô tả, Thuộc tính động của sản phẩm do người dùng nhập
+ * theo thời gian thực khi chuyển đổi giữa 🇻🇳 VN và 🇬🇧 EN.
+ * Thiết lập `pure: false` để tự động tính toán lại ngay lập tức khi đổi ngôn ngữ.
  */
-const EXACT_TRANSLATIONS: Record<string, string> = {
-  // 1. MacBook Pro M3 Max
-  'Laptop Apple MacBook Pro 16 Inch M3 Max 64GB RAM 1TB SSD Space Black':
-    'Apple MacBook Pro 16 Inch Laptop M3 Max 64GB RAM 1TB SSD Space Black',
-  'MacBook Pro 16 Inch màu Space Black trang bị chip M3 Max đỉnh cao công nghệ. Phù hợp cho lập trình viên, đồ họa 3D chuyên nghiệp và dựng phim 8K. Máy mới 100% nguyên seal fullbox bảo hành chính hãng Apple 12 tháng.':
-    '16-inch MacBook Pro in Space Black equipped with the flagship M3 Max chip. Ideal for developers, professional 3D graphics, and 8K video editing. 100% brand new sealed fullbox with 12-month official Apple warranty.',
+const CATEGORY_TRANSLATIONS: Record<string, { vi: string; en: string }> = {
+  '🏛️ Cổ Vật & Di Sản Lịch Sử': { vi: '🏛️ Cổ Vật & Di Sản Lịch Sử', en: '🏛️ Antiques & Historical Heritage' },
+  '💎 Đồng Hồ & Trang Sức Xa Xỉ': { vi: '💎 Đồng Hồ & Trang Sức Xa Xỉ', en: '💎 Luxury Watches & Jewelry' },
+  '🏎️ Siêu Xe & Phương Tiện Độc Bản': { vi: '🏎️ Siêu Xe & Phương Tiện Độc Bản', en: '🏎️ Supercars & Unique Vehicles' },
+  '💻 Thiết Bị Công Nghệ High-End': { vi: '💻 Thiết Bị Công Nghệ High-End', en: '💻 High-End Tech & Gadgets' },
+  '👜 Thời Trang & Phụ Kiện Hàng Hiệu': { vi: '👜 Thời Trang & Phụ Kiện Hàng Hiệu', en: '👜 Luxury Fashion & Designer Accessories' },
+  '🎨 Hội Họa & Tác Phẩm Nghệ Thuật': { vi: '🎨 Hội Họa & Tác Phẩm Nghệ Thuật', en: '🎨 Fine Arts & Masterpieces' },
+  '🏰 Bất Động Sản & Tài Sản Cao Cấp': { vi: '🏰 Bất Động Sản & Tài Sản Cao Cấp', en: '🏰 Real Estate & Premium Assets' },
+  '🍷 Rượu Vang Cổ & Xì Gà Thượng Hạng': { vi: '🍷 Rượu Vang Cổ & Xì Gà Thượng Hạng', en: '🍷 Vintage Wine & Fine Cigars' },
+  '🎸 Nhạc Cụ & Audio Hi-End': { vi: '🎸 Nhạc Cụ & Audio Hi-End', en: '🎸 Musical Instruments & Audio' },
+  '⚽ Đồ Sưu Tầm Thể Thao & Chữ Ký': { vi: '⚽ Đồ Sưu Tầm Thể Thao & Chữ Ký', en: '⚽ Sports Collectibles & Autographs' },
 
-  // 2. Mercedes-AMG GT Coupe
-  'Siêu Xe Mercedes-AMG GT Coupe 2025 Xanh Emerald Nhám Matte':
-    'Supercar Mercedes-AMG GT Coupe 2025 Matte Emerald Green',
-  'Siêu xe thể thao cao cấp Mercedes-AMG GT Coupe đời mới 2025 màu Xanh Emerald nhám Matte độc bản. Động cơ V8 4.0L Bi-Turbo công suất 577 mã lực. Nhập khẩu nguyên chiếc từ Đức, đầy đủ giấy tờ hải quan.':
-    'Luxury sports supercar Mercedes-AMG GT Coupe 2025 model in exclusive Matte Emerald Green. 4.0L Bi-Turbo V8 engine producing 577 horsepower. Fully imported from Germany with complete customs documents.',
+  // Subcategories
+  'Gốm Sứ & Đồ Ngọc Cổ Thập Niên 18-19': { vi: 'Gốm Sứ & Đồ Ngọc Cổ Thập Niên 18-19', en: '18th-19th Century Ceramics & Jade' },
+  'Tiền Cổ & Tem Thư Độc Bản': { vi: 'Tiền Cổ & Tem Thư Độc Bản', en: 'Ancient Coins & Rare Stamps' },
+  'Cổ Vật Hoàng Gia Triều Nguyễn': { vi: 'Cổ Vật Hoàng Gia Triều Nguyễn', en: 'Nguyen Dynasty Imperial Relics' },
 
-  // 3. Rolex Submariner Date
-  'Đồng Hồ Thụy Sĩ Rolex Submariner Date 2024 Chính Hãng 100% Fullbox':
-    'Authentic Swiss Watch Rolex Submariner Date 2024 100% Fullbox',
-  'Đồng hồ Thụy Sĩ chính hãng Rolex Submariner Date 2024 mới 100% fullbox đầy đủ giấy tờ bảo hành toàn cầu. Mặt số đen cổ điển, vành Cerachrom gốm đen chống xước, chất liệu thép Oystersteel 904L chống ăn mòn.':
-    'Authentic Swiss watch Rolex Submariner Date 2024 brand new 100% fullbox with complete international warranty papers. Classic black dial, scratch-resistant black Cerachrom ceramic bezel, 904L Oystersteel corrosion-resistant case.',
+  'Đồng Hồ Thụy Sĩ (Rolex, Patek Philippe)': { vi: 'Đồng Hồ Thụy Sĩ (Rolex, Patek Philippe)', en: 'Swiss Watches (Rolex, Patek Philippe)' },
+  'Trang Sức Kim Cương & Đá Quý Natural': { vi: 'Trang Sức Kim Cương & Đá Quý Natural', en: 'Natural Diamond & Gemstone Jewelry' },
 
-  // 4. Áo Hoàng Mộc Bào triều Nguyễn
-  'Áo Hoàng Mộc Bào Triều Nguyễn Thế Kỷ 19 Thêu Rồng Dát Vàng':
-    'Imperial Gold Robe from Nguyen Dynasty 19th Century Dragon Gold Embroidery',
-  'Cổ vật áo Hoàng Mộc Bào triều Nguyễn thế kỷ 19 thêu họa tiết rồng dát vàng 24K tinh xảo. Hiện vật sưu tầm độc bản có chứng thư giám định niên đại cổ vật của Viện Cổ Nhân Học.':
-    'Antique Imperial Gold Robe from the 19th-century Nguyen Dynasty featuring exquisite 24K gold dragon embroidery. Unique collectible artifact certified by the Institute of Antiquities.',
+  'Siêu Xe Thể Thao (Mercedes-AMG, Porsche)': { vi: 'Siêu Xe Thể Thao (Mercedes-AMG, Porsche)', en: 'Sports Supercars (Mercedes-AMG, Porsche)' },
+  'Xe Máy Cổ & Biển Số Phong Thủy Hiếm': { vi: 'Xe Máy Cổ & Biển Số Phong Thủy Hiếm', en: 'Vintage Motorcycles & Lucky License Plates' },
 
-  // Dynamic Keys
-  'MANHINH': 'DISPLAY',
-  'THUONGHIEU': 'BRAND',
-  'CHIP': 'CHIP',
-  'RAM': 'RAM',
-  'SSD': 'SSD',
-  'Màn hình': 'Display',
-  'Thương hiệu': 'Brand',
-  'Màu sắc': 'Color',
-  'Xuất xứ': 'Origin',
-  'Tình trạng': 'Condition',
-  'Năm sản xuất': 'Manufacture Year'
+  'Laptop & Máy Tính Đồ Họa High-End': { vi: 'Laptop & Máy Tính Đồ Họa High-End', en: 'High-End Laptops & Workstations' },
+  'Điện Thoại Flagship & Xa Xỉ (Vertu, Titan)': { vi: 'Điện Thoại Flagship & Xa Xỉ (Vertu, Titan)', en: 'Flagship & Luxury Phones (Vertu, Titanium)' },
+
+  'Túi Xách Xa Xỉ (Hermès Birkin, Chanel)': { vi: 'Túi Xách Xa Xỉ (Hermès Birkin, Chanel)', en: 'Luxury Handbags (Hermès Birkin, Chanel)' },
+  'Giày Sneaker Sưu Tầm Phiên Bản Giới Hạn': { vi: 'Giày Sneaker Sưu Tầm Phiên Bản Giới Hạn', en: 'Limited Edition Collectible Sneakers' },
+
+  'Tranh Sơn Mài & Tranh Lụa Đông Dương': { vi: 'Tranh Sơn Mài & Tranh Lụa Đông Dương', en: 'Indochine Lacquer & Silk Paintings' },
+  'Tượng Điêu Khắc Nghệ Thuật': { vi: 'Tượng Điêu Khắc Nghệ Thuật', en: 'Art Sculptures & Statues' },
+
+  'Biệt Thự Ven Biển & Penthouse Xa Xỉ': { vi: 'Biệt Thự Ven Biển & Penthouse Xa Xỉ', en: 'Beachfront Villas & Luxury Penthouses' },
+  'Đất Nền Đấu Giá Trung Tâm': { vi: 'Đất Nền Đấu Giá Trung Tâm', en: 'Prime Location Auction Land' },
+
+  'Rượu Vang Đỏ & Cognac Sưu Tầm Cổ': { vi: 'Rượu Vang Đỏ & Cognac Sưu Tầm Cổ', en: 'Vintage Red Wine & Rare Cognac' },
+  'Xì Gà Cuba Nguyên Bản Hộp Gỗ': { vi: 'Xì Gà Cuba Nguyên Bản Hộp Gỗ', en: 'Authentic Wooden Box Cuban Cigars' },
+
+  'Đàn Guitar & Piano Cổ Niên Đại Cao': { vi: 'Đàn Guitar & Piano Cổ Niên Đại Cao', en: 'Antique Guitars & Classic Pianos' },
+  'Mâm Đĩa Than & Hệ Thống Audio Đèn': { vi: 'Mâm Đĩa Than & Hệ Thống Audio Đèn', en: 'Turntables & Vacuum Tube Audio Systems' },
+
+  'Áo Đấu & Giày Có Chữ Ký Huyền Thoại': { vi: 'Áo Đấu & Giày Có Chữ Ký Huyền Thoại', en: 'Autographed Legend Jerseys & Shoes' },
+  'Thẻ Thể Thao Trading Cards Quý Hiếm': { vi: 'Thẻ Thẻ Thao Trading Cards Quý Hiếm', en: 'Rare Sports Trading Cards' }
 };
 
-const KEYWORD_MAP: [RegExp, string][] = [
+const EXACT_PRODUCT_TRANSLATIONS: Record<string, { vi: string; en: string }> = {
+  // MacBook
+  'Laptop Apple MacBook Pro 16 Inch M3 Max 64GB RAM 1TB SSD Space Black': {
+    vi: 'Laptop Apple MacBook Pro 16 Inch M3 Max 64GB RAM 1TB SSD Space Black',
+    en: 'Apple MacBook Pro 16 Inch Laptop M3 Max 64GB RAM 1TB SSD Space Black'
+  },
+  // Mercedes
+  'Siêu Xe Mercedes-AMG GT Coupe 2025 Xanh Emerald Nhám Matte': {
+    vi: 'Siêu Xe Mercedes-AMG GT Coupe 2025 Xanh Emerald Nhám Matte',
+    en: 'Supercar Mercedes-AMG GT Coupe 2025 Matte Emerald Green'
+  },
+  // Rolex
+  'Đồng Hồ Thụy Sĩ Rolex Submariner Date 2024 Chính Hãng 100% Fullbox': {
+    vi: 'Đồng Hồ Thụy Sĩ Rolex Submariner Date 2024 Chính Hãng 100% Fullbox',
+    en: 'Authentic Swiss Watch Rolex Submariner Date 2024 100% Fullbox'
+  },
+  // Nguyen Robe
+  'Áo Hoàng Mộc Bào Triều Nguyễn Thế Kỷ 19 Thêu Rồng Dát Vàng': {
+    vi: 'Áo Hoàng Mộc Bào Triều Nguyễn Thế Kỷ 19 Thêu Rồng Dát Vàng',
+    en: 'Imperial Gold Robe from Nguyen Dynasty 19th Century Dragon Gold Embroidery'
+  }
+};
+
+const KEYWORD_MAP_EN: [RegExp, string][] = [
   [/Siêu Xe/gi, 'Supercar'],
   [/Đồng Hồ/gi, 'Watch'],
   [/Thụy Sĩ/gi, 'Swiss'],
@@ -63,11 +92,15 @@ const KEYWORD_MAP: [RegExp, string][] = [
   [/Nhật Bản/gi, 'Japan'],
   [/Mỹ/gi, 'USA'],
   [/Pháp/gi, 'France'],
-  [/Thụy Sĩ/gi, 'Switzerland'],
   [/triều Nguyễn/gi, 'Nguyen Dynasty'],
   [/thế kỷ/gi, 'century'],
   [/cổ vật/gi, 'antique'],
-  [/độc bản/gi, 'exclusive']
+  [/độc bản/gi, 'exclusive'],
+  [/Biệt Thự/gi, 'Villa'],
+  [/Bất Động Sản/gi, 'Real Estate'],
+  [/Đồ Cổ/gi, 'Antiques'],
+  [/Trang Sức/gi, 'Jewelry'],
+  [/Kim Cương/gi, 'Diamond']
 ];
 
 @Pipe({
@@ -81,21 +114,28 @@ export class AutoTranslatePipe implements PipeTransform {
   transform(value?: string | null): string {
     if (!value) return '';
 
-    // Nếu đang chọn Tiếng Việt ('vi') -> Giữ nguyên chuỗi gốc
-    if (this.languageService.currentLang() === 'vi') {
+    const lang = this.languageService.currentLang();
+    const trimmed = value.trim();
+
+    // 1. Kiểm tra danh mục
+    if (CATEGORY_TRANSLATIONS[trimmed]) {
+      return CATEGORY_TRANSLATIONS[trimmed][lang];
+    }
+
+    // 2. Kiểm tra sản phẩm chính xác
+    if (EXACT_PRODUCT_TRANSLATIONS[trimmed]) {
+      return EXACT_PRODUCT_TRANSLATIONS[trimmed][lang];
+    }
+
+    // 3. Nếu chọn Tiếng Việt -> Giữ nguyên chuỗi gốc
+    if (lang === 'vi') {
       return value;
     }
 
-    // Nếu đang chọn Tiếng Anh ('en') -> Kiểm tra trong kho bản dịch chính xác
-    const trimmed = value.trim();
-    if (EXACT_TRANSLATIONS[trimmed]) {
-      return EXACT_TRANSLATIONS[trimmed];
-    }
-
-    // Kiểm tra từ khóa nếu không khớp 100% câu
+    // 4. Nếu chọn Tiếng Anh -> Chạy bộ lọc từ khóa thông minh
     let translated = trimmed;
     let modified = false;
-    for (const [regex, replacement] of KEYWORD_MAP) {
+    for (const [regex, replacement] of KEYWORD_MAP_EN) {
       if (regex.test(translated)) {
         translated = translated.replace(regex, replacement);
         modified = true;
