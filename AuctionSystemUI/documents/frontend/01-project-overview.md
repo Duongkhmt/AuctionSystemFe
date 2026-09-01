@@ -36,16 +36,16 @@ Cấu trúc thư mục gốc của dự án `src/app`:
 src/app/
 ├── app.component.ts         # Root Component chính chỉ chứa <router-outlet />
 ├── app.config.ts            # Cấu hình Providers gốc (Router, HttpClient, Interceptors)
-├── app.routes.ts            # Khai báo Routes chính và định tuyến Lazy Loading
-├── core/                    # Dịch vụ hạ tầng toàn cục (Auth, Interceptors, Guards, Utility)
+├── app.routes.ts            # Khai báo Routes chính và định tuyến Lazy Loading + Role Guards
+├── core/                    # Dịch vụ hạ tầng toàn cục (Auth, Interceptors, Guards, Services, Language)
 ├── shared/                  # UI Components, Pipes, Models dùng chung trên nhiều trang
 ├── layout/                  # Bộ khung giao diện chính (MainLayout, SellerLayout, AdminLayout)
 └── features/                # Phân vùng 4 Module nghiệp vụ chính của hệ thống đấu giá
-    ├── auth/                # Đăng nhập & Xác thực người dùng
-    ├── public-marketplace/  # Sàn đấu giá công khai cho khách hàng & người xem
-    ├── bidder-portal/       # Trang quản lý lịch sử đấu giá cá nhân của Bidder
-    ├── seller-studio/       # Kênh quản lý bài đăng & tạo đấu giá của Người Bán (Seller)
-    └── admin-moderation/    # Trang kiểm duyệt & phê duyệt bài đăng của Admin
+    ├── auth/                # Đăng nhập, Đăng ký & Xác thực người dùng (Login, Register)
+    ├── public-marketplace/  # Sàn đấu giá công khai cho khách hàng & người xem (Home, Product Detail)
+    ├── bidder-portal/       # Cổng cá nhân quản lý các lô đã thắng (Won Auctions, Order Checkout)
+    ├── seller-studio/       # Kênh quản lý bài đăng, xem trước & xuất hàng của Người Bán (Seller)
+    └── admin-moderation/    # Cổng kiểm duyệt bài đăng chờ xuất bản của Ban Quản Trị (Admin)
 ```
 
 ---
@@ -65,7 +65,7 @@ src/app/
    [ app.component.ts ]
             │
             ▼
-    [ app.routes.ts ] ──► (Check roleGuard & Nạp Lazy Loading Layout + Feature Routes)
+    [ app.routes.ts ] ──► (Check authGuard & roleGuard ➔ Nạp Lazy Loading Layout + Feature Routes)
             │
             ▼
  [ Responsive Layout & Component Rendering ]
@@ -97,7 +97,7 @@ src/app/
       provideZoneChangeDetection({ eventCoalescing: true }),
       provideRouter(routes, withComponentInputBinding(), withViewTransitions()),
       provideHttpClient(
-        withInterceptors([apiHeaderInterceptor, errorInterceptor, loadingInterceptor])
+        withInterceptors([apiHeaderInterceptor, errorInterceptor])
       )
     ]
   };
@@ -105,7 +105,7 @@ src/app/
 - **Cấu hình nổi bật do Lead thiết kế**:
   - `withComponentInputBinding()`: Tự động bind URL Parameters (ví dụ: `:id`) thẳng vào `@Input()` của Component mà không cần qua `ActivatedRoute.params`.
   - `withViewTransitions()`: Kích hoạt animation mượt mà của trình duyệt khi chuyển trang.
-  - `withInterceptors([apiHeaderInterceptor, errorInterceptor, loadingInterceptor])`: Đăng ký chuỗi 3 Functional Interceptors xử lý theo thứ tự: Gắn Header Session ➔ Xử lý lỗi tập trung ➔ Quản lý trạng thái Loading indicator.
+  - `withInterceptors([apiHeaderInterceptor, errorInterceptor])`: Đăng ký chuỗi Functional Interceptors xử lý theo thứ tự: Gắn Header Session (`x-user-id`) ➔ Xử lý lỗi tập trung và phát thông báo Toast cảnh báo trực quan.
 - **File gọi tới**: `main.ts`.
 
 ---
@@ -114,11 +114,13 @@ src/app/
 - **Mục đích**: Khai báo danh sách các tuyến đường Root Route của ứng dụng.
 - **Vì sao tạo**: Quản lý định tuyến tổng thể, phân quyền người dùng thông qua `canActivate` Guards và ứng dụng **Lazy Loading** để tối ưu tốc độ tải ban đầu (Initial Bundle Size).
 - **Phân tích các Route chính**:
-  1. `/auth`: Lazy load `AUTH_ROUTES`.
-  2. `/`: Sử dụng `MainLayoutComponent`, chứa `PUBLIC_MARKETPLACE_ROUTES` và `/my-bids` (`BIDDER_PORTAL_ROUTES`).
-  3. `/seller`: Bọc bởi `SellerLayoutComponent`, được bảo vệ bởi `roleGuard(['ROLE_SELLER', 'ROLE_ADMIN'])`, lazy load `SELLER_ROUTES`.
-  4. `/admin`: Bọc bởi `AdminLayoutComponent`, được bảo vệ bởi `roleGuard(['ROLE_ADMIN'])`, lazy load `ADMIN_ROUTES`.
-  5. `**`: Redirect tự động về `/`.
+  1. `/login` & `/register`: Trang đăng nhập và trang đăng ký người dùng mới.
+  2. `/auth`: Lazy load `AUTH_ROUTES`.
+  3. `/`: Sử dụng `MainLayoutComponent`, chứa `PUBLIC_MARKETPLACE_ROUTES`.
+  4. `/my-bids`: Bọc bởi `authGuard` và `roleGuard(['USER'])`, lazy load `BIDDER_PORTAL_ROUTES` (Trang các lô sản phẩm đã thắng).
+  5. `/seller`: Bọc bởi `SellerLayoutComponent`, bảo vệ bởi `authGuard` và `roleGuard(['USER', 'ADMIN'])`, lazy load `SELLER_ROUTES`.
+  6. `/admin`: Bọc bởi `AdminLayoutComponent`, bảo vệ bởi `authGuard` và `roleGuard(['ADMIN'])`, lazy load `ADMIN_ROUTES`.
+  7. `**`: Redirect tự động về `/`.
 - **File gọi tới**: `app.config.ts`.
 - **File gọi tiếp**: Các Layout Components và Feature Route files.
 
@@ -130,8 +132,9 @@ src/app/
    - Loại bỏ hoàn toàn `NgModules`. Tất cả Component, Pipe, Directive đều là Standalone (`standalone: true`).
    - Tăng khả năng Tree-shaking, giảm kích thước bundle nạp qua mạng.
 
-2. **Signals State Management**:
-   - Sử dụng Signal (`signal()`, `computed()`) cho trạng thái Reactive (User session, Loading indicator, Cart, Data lists) giúp Angular bỏ qua việc Change Detection quá nhiều DOM nodes không cần thiết.
+2. **Signals State Management & Global Bilingual Dictionary**:
+   - Sử dụng Signal (`signal()`, `computed()`) cho trạng thái Reactive (User session, Language code, Selected tab, Form value changes).
+   - Tích hợp `LanguageService` với Signal `currentLang` cho phép bấm chuyển ngữ tức thì giữa **Tiếng Việt (VN)** và **Tiếng Anh (EN)** toàn hệ thống.
 
 ---
 
@@ -139,4 +142,4 @@ src/app/
 
 - Thư mục gốc `app` giữ vai trò thiết lập khung gầm và kết nối các thành phần chính.
 - Tất cả các Route nghiệp vụ bắt buộc phải sử dụng **Lazy Loading** thông qua `loadChildren` hoặc `loadComponent`.
-- Chú ý thứ tự đăng ký HTTP Interceptors trong `app.config.ts` để đảm bảo chuỗi xử lý Request/Response chạy đúng thứ tự mong muốn.
+- Phân định rõ ranh giới vai trò: `USER` tham gia đấu giá & xem lô thắng; `ADMIN` tập trung thẩm định & duyệt bài xuất bản.

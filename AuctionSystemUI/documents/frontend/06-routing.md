@@ -2,16 +2,16 @@
 
 # Mục đích
 
-Tài liệu này giải thích chiến lược định tuyến (Routing) trong dự án **AuctionSystemUI**. Hệ thống áp dụng **Lazy Loading Route Modules**, **Nested Layout Routes** và **Higher-Order Functional Route Guards** để tối ưu hóa hiệu năng và bảo mật điều hướng.
+Tài liệu này giải thích chiến lược định tuyến (Routing) trong dự án **AuctionSystemUI**. Hệ thống áp dụng **Lazy Loading Route Modules**, **Nested Layout Routes** và **Higher-Order Functional Route Guards** (`authGuard`, `roleGuard`) để tối ưu hóa hiệu năng và bảo mật điều hướng theo vai trò người dùng (`USER`, `ADMIN`).
 
 ---
 
 # Vì sao phải tồn tại
 
 Nếu không có kiến trúc định tuyến rõ ràng:
-- Toàn bộ Javascript bundle của 4 module nghiệp vụ sẽ bị gộp chung vào 1 file `main.js` siêu lớn, làm giật lắc trang khi ứng dụng vừa nạp.
-- Không thể kiểm soát quyền truy cập trang `/admin` và `/seller` ở cấp độ URL.
-- Không giữ được trạng thái cố định của Layout (Top Header, Sidebar) khi người dùng bấm chuyển qua lại giữa các trang con.
+- Toàn bộ Javascript bundle của các module nghiệp vụ sẽ bị gộp chung vào 1 file `main.js` siêu lớn, làm chậm tốc độ nạp trang ban đầu.
+- Không thể kiểm soát quyền truy cập trang `/admin`, `/seller`, `/my-bids` ở cấp độ URL.
+- Không giữ được trạng thái cố định của Layout (Header, Sidebar) khi người dùng bấm chuyển qua lại giữa các trang con.
 
 ---
 
@@ -21,22 +21,26 @@ Sơ đồ định tuyến tổng thể trong `app.routes.ts`:
 
 ```text
 /
+├── login -> LoginComponent
+├── register -> RegisterComponent
 ├── auth/ (Lazy Load AUTH_ROUTES)
-│   └── login -> LoginComponent
+│   ├── login -> LoginComponent
+│   └── register -> RegisterComponent
 │
 ├── '' (MainLayoutComponent)
 │   ├── '' (Lazy Load PUBLIC_MARKETPLACE_ROUTES)
 │   │   ├── '' -> HomeComponent
 │   │   └── product/:id -> ProductDetailComponent
-│   └── my-bids (Lazy Load BIDDER_PORTAL_ROUTES)
-│       └── '' -> MyBidsComponent
+│   ├── my-bids (Lazy Load BIDDER_PORTAL_ROUTES + authGuard + roleGuard(['USER']))
+│   │   ├── '' -> WonAuctionsComponent
+│   │   └── won -> WonAuctionsComponent
+│   └── seller (Lazy Load SELLER_ROUTES + authGuard + roleGuard(['USER', 'ADMIN']))
+│       ├── '' -> SellerProductListComponent
+│       ├── create -> CreateProductComponent
+│       ├── edit/:id -> EditProductComponent
+│       └── orders -> SellerOrdersComponent
 │
-├── seller/ (SellerLayoutComponent + roleGuard(['ROLE_SELLER', 'ROLE_ADMIN']))
-│   └── (Lazy Load SELLER_ROUTES)
-│       ├── '' -> ProductListComponent
-│       └── create -> CreateProductComponent
-│
-└── admin/ (AdminLayoutComponent + roleGuard(['ROLE_ADMIN']))
+└── admin/ (AdminLayoutComponent + authGuard + roleGuard(['ADMIN']))
     └── (Lazy Load ADMIN_ROUTES)
         └── '' -> PendingApprovalComponent
 ```
@@ -49,20 +53,25 @@ Sơ đồ định tuyến tổng thể trong `app.routes.ts`:
 Tất cả các tuyến đường nghiệp vụ đều dùng cú pháp `loadChildren`:
 ```typescript
 {
-  path: 'seller',
-  component: SellerLayoutComponent,
-  canActivate: [roleGuard(['ROLE_SELLER', 'ROLE_ADMIN'])],
-  loadChildren: () => import('./features/seller-studio/seller.routes').then((m) => m.SELLER_ROUTES)
+  path: 'admin',
+  component: AdminLayoutComponent,
+  canActivate: [authGuard, roleGuard(['ADMIN'])],
+  loadChildren: () => import('./features/admin-moderation/admin.routes').then((m) => m.ADMIN_ROUTES)
 }
 ```
-Lợi ích: Trình duyệt chỉ nạp file Javascript chứa giao diện Seller Studio khi người dùng thực sự bấm truy cập vào `/seller`.
+Lợi ích: Trình duyệt chỉ nạp file Javascript chứa giao diện Admin khi tài khoản Quản trị viên truy cập vào `/admin`.
 
-### 2. View Transitions API (`withViewTransitions()`)
+### 2. Bảo Vệ Route Theo Vai Trò (`roleGuard`)
+- Đường dẫn `/my-bids` (Tài khoản của tôi - Các lô đã thắng) chỉ dành cho vai trò `USER`. Tài khoản `ADMIN` sẽ bị ngăn truy cập và chuyển hướng về trang quản trị.
+- Đường dẫn `/admin` (Quản lý bài đăng) chỉ dành riêng cho vai trò `ADMIN`.
+- Thanh Header công khai sẽ tự động ẩn `Tài Khoản Của Tôi` đối với `ADMIN` và chỉ hiển thị `Quản Lý Bài Đăng`.
+
+### 3. View Transitions API (`withViewTransitions()`)
 Được đăng ký trong `app.config.ts`:
 ```typescript
 provideRouter(routes, withComponentInputBinding(), withViewTransitions())
 ```
 Lợi ích: Tận dụng Native Browser View Transitions API giúp trải nghiệm mượt mà giống như Native Application khi chuyển trang.
 
-### 3. Component Input Binding (`withComponentInputBinding()`)
+### 4. Component Input Binding (`withComponentInputBinding()`)
 Cho phép lấy `:id` trên URL trực tiếp qua `@Input() id!: number` thay vì phải inject `ActivatedRoute` để subscribe `paramMap`.

@@ -2,7 +2,7 @@
 
 # Mục đích
 
-Tài liệu này tổng quan kiến trúc tầng **Features** (`src/app/features`) - vùng chứa 100% logic nghiệp vụ sản phẩm, sàn đấu giá trực tuyến, phân quyền giao diện và tích hợp REST API theo 4 miền phân định (Public Marketplace, Bidder Portal, Seller Studio, Admin Moderation).
+Tài liệu này tổng quan kiến trúc tầng **Features** (`src/app/features`) - vùng chứa 100% logic nghiệp vụ sản phẩm, sàn đấu giá trực tuyến, phân quyền giao diện và tích hợp REST API theo 5 miền phân định (Auth, Public Marketplace, Bidder Portal, Seller Studio, Admin Moderation).
 
 ---
 
@@ -31,11 +31,11 @@ Nếu không phân chia theo Feature-Driven Architecture:
 
 ```text
 src/app/features/
-├── auth/                 # Trang Đăng nhập & Xác thực người dùng
+├── auth/                 # Trang Đăng nhập, Đăng ký & Xác thực người dùng (Login, Register)
 ├── public-marketplace/   # Sàn đấu giá công khai (Home & Chi tiết sản phẩm đấu giá)
-├── bidder-portal/        # Trang xem Lịch sử nhảy giá & Bảng theo dõi của Bidder
-├── seller-studio/        # Kênh Người Bán (Đăng bài mới, Xem danh sách, Hủy/Đăng lại phiên)
-└── admin-moderation/     # Trung tâm kiểm duyệt bài chờ đăng của Ban Quản Trị
+├── bidder-portal/        # Trang quản lý danh sách sản phẩm thắng thầu (Won Auctions) & Checkout Modal
+├── seller-studio/        # Kênh Người Bán (Đăng bài mới, Sửa bài, Hủy/Relist phiên, Đơn hàng & Ship)
+└── admin-moderation/     # Trung tâm kiểm duyệt bài chờ đăng của Ban Quản Trị (Pending Approval)
 ```
 
 ---
@@ -48,7 +48,7 @@ src/app/features/
           ├─────────────────────────┼─────────────────────────┐
           ▼                         ▼                         ▼
 [ Public Marketplace ]      [ Seller Studio ]       [ Admin Moderation ]
-(Home / Product Detail)     (List / Create)         (Pending Approval)
+(Home / Product Detail)     (List / Create / Edit)  (Pending Approval)
           │                         │                         │
           ▼                         ▼                         ▼
 [ MarketplaceService ]     [ SellerApiService ]     [ AdminApiService ]
@@ -75,4 +75,4 @@ src/app/features/
 # Best Practice & Thiết kế kiến trúc
 
 1. **Feature Encapsulation**: Mỗi feature giữ độc lập các file Routes, Pages, Services của chính nó.
-2. **Standardized API Transformation**: Tất cả các `*Service` thuộc feature đều dùng `snakeToCamelKeys` để chuẩn hóa mảng dữ liệu DTO trước khi đẩy lên Component render.
+2. **Standardized API Transformation**: Tất cả các `*Service` thuộc feature đều dùng `case-converter.util.ts` (`snakeToCamelKeys`) để chuẩn hóa mảng dữ liệu DTO trước khi đẩy lên Component render.

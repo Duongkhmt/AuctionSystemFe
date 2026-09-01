@@ -1,27 +1,34 @@
-# Feature: Bidder Portal (Cổng Đặt Giá Cá Nhân)
+# Feature: Bidder Portal (Cổng Sản Phẩm Đã Thắng & Cá Nhân)
 
 # Mục đích
-Quản lý lịch sử đấu giá cá nhân của người dùng vai trò `BIDDER` và cung cấp dịch vụ đặt giá thầu (Bidding Service Engine).
+Quản lý các bài thầu đã chiến thắng của người dùng vai trò `USER` (Bidder), thực hiện thanh toán đơn hàng (Checkout Payment) và xác nhận nhận hàng. Được bảo vệ bởi `authGuard` và `roleGuard(['USER'])`.
 
 ---
 
 # Cấu trúc & Chi tiết từng File
 
 ### 1. `bidder-portal.routes.ts`
-- **Tuyến đường**: `''`: Render `MyBidsComponent`.
+- **Tuyến đường**:
+  - `''`: Render `WonAuctionsComponent`.
+  - `'won'`: Render `WonAuctionsComponent`.
 
 ---
 
-### 2. `bidding.service.ts`
-- **Mục đích**: Chứa toàn bộ các hàm gọi API đặt giá thầu lên Spring Boot Backend.
+### 2. `bidding.service.ts` & `order.service.ts`
+- **Mục đích**: Gọi API đặt giá thầu và xử lý quy trình đơn hàng trúng thầu.
 - **Methods**:
-  - `placeBid(auctionId, bidderId, request: BidRequest)`: Gọi `POST /v1/auctions/{auctionId}/bids?bidderId={bidderId}`.
-  - `buyNow(auctionId, bidderId)`: Gọi `POST /v1/auctions/{auctionId}/bids/buy-now?bidderId={bidderId}`.
-  - `getBidHistory(auctionId)`: Gọi `GET /v1/auctions/{auctionId}/bids` lấy danh sách nhảy giá.
+  - `getWonAuctions()`: `GET /v1/bidders/{bidderId}/won-auctions`
+  - `checkoutOrder(orderId, data)`: `POST /v1/bidders/{bidderId}/orders/{orderId}/checkout`
+  - `confirmReceived(orderId)`: `PUT /v1/bidders/{bidderId}/orders/{orderId}/confirm-received`
 
 ---
 
-### 3. `my-bids.component.ts`
-- **Mục đích**: Trang cá nhân hiển thị danh sách các phiên thầu mà người dùng hiện tại đang tham gia.
-- **Dependency Injection**: `userSession = inject(UserSessionService)`.
-- **Thông tin**: Hiển thị tên và ID Bidder đang làm việc (Ví dụ: `T Dương`, `ID: 3`).
+### 3. `won-auctions.component.ts`
+- **Mục đích**: Trang cá nhân hiển thị danh sách các lô sản phẩm mà người dùng đã đấu giá thắng cuộc.
+- **Giao diện Gold Luxury**: Thẻ đơn hàng 3 cột phong cách quý phái, phân loại theo 5 Tab trạng thái (`Tất cả`, `Chờ thanh toán`, `Đã thanh toán`, `Đang giao hàng`, `Hoàn tất`).
+- **Thao tác**: Mở Modal Checkout điền thông tin giao hàng hoặc bấm nút xác nhận "Đã Nhận Hàng".
+
+---
+
+### 4. `checkout-modal.component.ts`
+- **Mục đích**: Popup Modal cho phép người mua nhập địa chỉ nhận hàng chi tiết, số điện thoại liên hệ và lựa chọn cổng thanh toán (VNPAY, Ví điện tử, Chuyển khoản ngân hàng).

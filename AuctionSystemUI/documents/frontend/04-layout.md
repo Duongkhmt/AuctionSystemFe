@@ -20,7 +20,7 @@ Nếu không có tầng `layout`:
 - **Được phép**:
   - Chứa `<router-outlet />` làm nơi nhúng động các trang con (Child routes).
   - Nhúng `<app-toast-container />` để sẵn sàng hiển thị thông báo nổi trên toàn bộ khung làm việc.
-  - Hiển thị thông tin phiên làm việc hiện tại (`UserSessionService`) và công cụ chuyển vai trò (`Role Tester`).
+  - Hiển thị thông tin phiên làm việc hiện tại (`UserSessionService`) và bộ đổi ngôn ngữ toàn hệ thống (`LanguageService`).
 
 - **Không được phép**:
   - **KHÔNG ĐƯỢC** chứa logic nghiệp vụ gọi API của sản phẩm hay đấu giá.
@@ -55,7 +55,7 @@ src/app/layout/
        │                         │                         │
        ▼                         ▼                         ▼
 [ MainLayoutComponent ]  [ SellerLayoutComponent ] [ AdminLayoutComponent ]
-(Top Header + Tester)    (Left Sidebar Indigo)     (Left Sidebar Rose)
+(Top Header + VN/EN)     (Left Sidebar Dark Gold)  (Left Sidebar Dark Emerald)
        │                         │                         │
        ▼                         ▼                         ▼
 <router-outlet />         <router-outlet />         <router-outlet />
@@ -69,32 +69,33 @@ src/app/layout/
 ### 1. `main-layout.component.ts`
 - **Mục đích**: Bộ khung tổng thể cho khách truy cập, bidder theo dõi sàn đấu giá và lịch sử thầu cá nhân.
 - **Thành phần nổi bật**:
-  - **Top Navigation Bar**: Thương hiệu AuctionHub, Menu chuyển trang nhanh (`Sàn Đấu Giá`, `Kênh Người Bán`, `Duyệt Bài Admin`).
-  - **Role Tester Switcher Bar**: Thanh chuyển đổi nhanh 3 vai trò (`Bidder`, `Seller`, `Admin`) trực tiếp kích hoạt `UserSessionService.switchToRole(role)`.
-  - **Session Badge**: Đọc Signal `userSession.currentUser().name` và `id` hiển thị avatar chữ cái đầu.
-- **Routing Integration**: Phục vụ các tuyến đường thuộc nhóm `MainLayout`: `/` (Sàn đấu giá), `/product/:id` (Chi tiết), `/my-bids` (Lịch sử giá cá nhân).
+  - **Top Navigation Bar**: Thương hiệu AuctionHub (⚖ Gold Logo), Menu lọc danh mục hot (`Sàn Đấu Giá`, `Bất Động Sản`, `Đồng Hồ & Trang Sức`, `Đồ Cổ`).
+  - **Phân định vai trò linh hoạt**:
+    - Tài khoản `USER`: Hiển thị liên kết **`Tài Khoản Của Tôi`** (`/my-bids`).
+    - Tài khoản `ADMIN`: Tự động ẩn `Tài Khoản Của Tôi` và thay bằng liên kết **`Quản Lý Bài Đăng`** (`/admin`).
+  - **Language Switcher Toggle**: Nút bấm chuyển đổi nhanh **VN ↔ EN** dùng chung toàn hệ thống.
+  - **User Session Badge**: Hiển thị tên tài khoản, vai trò và nút 🚪 **Đăng xuất**.
 
 ---
 
 ### 2. `seller-layout.component.ts`
-- **Mục đích**: Bộ khung chuyên biệt cho Kênh Người Bán (Seller Studio) với tone màu thương hiệu Indigo.
+- **Mục đích**: Bộ khung chuyên biệt cho Kênh Người Bán (Seller Studio) với tone màu Gold Luxury tối sang trọng.
 - **Thành phần nổi bật**:
-  - **Sidebar bên trái (`w-64`)**: Chứa Menu quản lý (`📋 Danh sách sản phẩm`, `➕ Tạo bài đăng mới`).
-  - **Link quay lại**: Nút `← Về Sàn Đấu Giá Public` trên Header top bar giúp Seller thoát về giao diện chính nhanh chóng.
-- **Routing Integration**: Được bọc bảo vệ bởi `roleGuard(['ROLE_SELLER', 'ROLE_ADMIN'])` trong `app.routes.ts`.
+  - **Sidebar bên trái (`w-64`)**: Chứa Menu quản lý (`📋 Danh sách sản phẩm`, `📦 Đơn hàng đã bán`, `+ Tạo bài đăng mới`).
+  - **Header Switcher**: Nút bấm chuyển qua lại giữa `Xem: Sản Phẩm Đã Thắng` và `Xem: Sản Phẩm Đã Đăng`.
 
 ---
 
 ### 3. `admin-layout.component.ts`
-- **Mục đích**: Bộ khung quản trị nội dung nghiêm ngặt dành cho Ban Quản Trị (Admin) với tone màu Cảnh báo Rose.
+- **Mục đích**: Bộ khung quản trị nội dung nghiêm ngặt dành cho Ban Quản Trị (Admin) với tone màu Luxury Dark Emerald (`#09110d` & `#050b08`).
 - **Thành phần nổi bật**:
-  - **Sidebar bên trái (`w-64`)**: Biểu tượng 🛡️ Admin Moderation, Menu kiểm duyệt `🔍 Duyệt bài chờ (Pending)`.
-  - **Profile Badge**: Hiển thị nhãn `AD` nổi bật cùng tên Admin và ID thực tế (`ID: 1`).
-- **Routing Integration**: Được bọc bảo vệ nghiêm ngặt bởi `roleGuard(['ROLE_ADMIN'])`.
+  - **Sidebar bên trái (`w-64`)**: Biểu tượng ⚖ AuctionHub — BAN QUẢN TRỊ, Menu quản lý (`Quản lý bài đăng` với badge `3`, `Quản lý danh mục`, `Người dùng`, `Đơn hàng & khiếu nại`).
+  - **Thẻ Admin Profile góc dưới**: Khối hình thoi kim cương Gold **`A`** kèm tên `Admin System` (Admin ID: 1).
+  - **Thanh Header Top Bar**: Đặt liên kết nhỏ tinh tế **`← Về sàn đấu giá`** ở góc trái bên cạnh đường dẫn `Ban Quản Trị / Quản lý bài đăng`.
 
 ---
 
 # Best Practice & Thiết kế kiến trúc
 
 1. **Separation of Layout Contexts**: Phân tách 3 Layouts hoàn toàn độc lập giúp CSS Tailwind, màu sắc chủ đạo và cấu trúc Sidebar/Header không bị chồng chéo phức tạp.
-2. **Nested Router Outlets**: Áp dụng triệt để mô hình Parent Layout -> Child Route trong `app.routes.ts` giúp duy trì trạng thái Sidebar/Header cố định khi người dùng di chuyển giữa các trang trong cùng phân vùng.
+2. **Nested Router Outlets**: Áp dụng triệt me mô hình Parent Layout ➔ Child Route trong `app.routes.ts` giúp duy trì trạng thái Sidebar/Header cố định khi người dùng di chuyển giữa các trang trong cùng phân vùng.
