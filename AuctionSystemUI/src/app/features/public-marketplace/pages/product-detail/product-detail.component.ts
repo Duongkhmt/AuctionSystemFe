@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PublicMarketplaceService } from '../../services/public-marketplace.service';
 import { BiddingService } from '../../../bidder-portal/services/bidding.service';
-import { UserSessionService } from '../../../../core/auth/user-session.service';
+import { AuthService } from '../../../../core/auth/auth.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { LanguageService } from '../../../../core/services/language.service';
 import { ProductResponse } from '../../../../shared/models/product.model';
@@ -13,10 +13,11 @@ import { StatusBadgeComponent } from '../../../../shared/components/status-badge
 import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
 import { AuctionTimerPipe } from '../../../../shared/pipes/auction-timer.pipe';
 import { AutoTranslatePipe } from '../../../../shared/pipes/auto-translate.pipe';
+import { AuthModalComponent } from '../../../../shared/components/auth-modal/auth-modal.component';
 
 /**
  * ====================================================================================
- * 🏷️ PRODUCT DETAIL COMPONENT (Trang Xem Chi Tiết & Đấu Giá Realtime Công Khai Đa Ngôn Ngữ Tự Động Dịch)
+ * 🏷️ PRODUCT DETAIL COMPONENT (Trang Xem Chi Tiết & Đấu Giá Realtime Công Khai Bảo Mật JWT)
  * ====================================================================================
  */
 @Component({
@@ -29,9 +30,15 @@ import { AutoTranslatePipe } from '../../../../shared/pipes/auto-translate.pipe'
     StatusBadgeComponent,
     CurrencyVndPipe,
     AuctionTimerPipe,
-    AutoTranslatePipe
+    AutoTranslatePipe,
+    AuthModalComponent
   ],
   template: `
+    <!-- Modal Yêu Cầu Đăng Nhập Nhanh Cho Khách Vãng Lai -->
+    @if (showAuthModal()) {
+      <app-auth-modal (closeModal)="showAuthModal.set(false)" (authSuccess)="onAuthSuccess()" />
+    }
+
     @if (loading() && !product()) {
       <div class="h-96 rounded-3xl bg-slate-900/40 border border-slate-800 animate-pulse"></div>
     } @else if (product()) {
@@ -172,6 +179,14 @@ import { AutoTranslatePipe } from '../../../../shared/pipes/auto-translate.pipe'
                 </div>
               } @else if (product()!.auctionStatus === 'RUNNING') {
                 <div class="space-y-4 pt-2">
+                  <!-- Guest Banner Prompt if not logged in -->
+                  @if (!authService.isLoggedIn()) {
+                    <div class="p-3 bg-indigo-950/60 border border-indigo-800/80 rounded-2xl text-center text-xs text-indigo-300 space-y-1">
+                      <p class="font-bold">🔒 Đang xem ở chế độ Khách vãng lai</p>
+                      <p class="text-[11px] text-slate-400">Đăng nhập để đặt giá cạnh tranh & mua ngay</p>
+                    </div>
+                  }
+
                   <div class="space-y-3">
                     <label class="block text-xs font-semibold text-slate-300">
                       {{ langService.t('product.inputBidLabel') }} {{ minNextBid() | currencyVnd }})
@@ -196,11 +211,11 @@ import { AutoTranslatePipe } from '../../../../shared/pipes/auto-translate.pipe'
                     </div>
 
                     <button
-                      (click)="submitBid()"
+                      (click)="handleBidAction()"
                       [disabled]="biddingActionLoading()"
                       class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"
                     >
-                      {{ langService.t('product.placeBidBtn') }} (User: {{ userSession.currentUser().name }})
+                      <span>🚀 {{ langService.t('product.placeBidBtn') }}</span>
                     </button>
                   </div>
 
@@ -208,11 +223,11 @@ import { AutoTranslatePipe } from '../../../../shared/pipes/auto-translate.pipe'
                     <div class="pt-4 border-t border-slate-800 space-y-2">
                       <p class="text-xs text-slate-400 text-center">{{ langService.t('product.buyNowOrLabel') }}</p>
                       <button
-                        (click)="submitBuyNow()"
+                        (click)="handleBuyNowAction()"
                         [disabled]="biddingActionLoading()"
                         class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2"
                       >
-                        {{ langService.t('product.buyNowBtn') }} {{ product()!.buyNowPrice! | currencyVnd }}
+                        <span>⚡ {{ langService.t('product.buyNowBtn') }} {{ product()!.buyNowPrice! | currencyVnd }}</span>
                       </button>
                     </div>
                   }
@@ -262,7 +277,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private marketplaceService = inject(PublicMarketplaceService);
   private biddingService = inject(BiddingService);
-  userSession = inject(UserSessionService);
+  authService = inject(AuthService);
   langService = inject(LanguageService);
   private toastService = inject(ToastService);
 
@@ -271,6 +286,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   activeImage = signal<string>('');
   loading = signal<boolean>(true);
   biddingActionLoading = signal<boolean>(false);
+  showAuthModal = signal<boolean>(false);
 
   bidAmount: number = 0;
   maxAutoBidAmount?: number;
@@ -306,7 +322,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   isOwnerSeller(): boolean {
-    return !!this.product() && this.product()!.sellerId === this.userSession.currentUser().id;
+    const currentUser = this.authService.currentUser();
+    return !!this.product() && !!currentUser && this.product()!.sellerId === currentUser.id;
   }
 
   isEnded(): boolean {
@@ -365,6 +382,26 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  handleBidAction(): void {
+    if (!this.authService.isLoggedIn()) {
+      this.showAuthModal.set(true);
+      return;
+    }
+    this.submitBid();
+  }
+
+  handleBuyNowAction(): void {
+    if (!this.authService.isLoggedIn()) {
+      this.showAuthModal.set(true);
+      return;
+    }
+    this.submitBuyNow();
+  }
+
+  onAuthSuccess(): void {
+    this.toastService.showSuccess('Đã xác thực', 'Bây giờ bạn có thể thực hiện thao tác thầu!');
+  }
+
   submitBid(): void {
     if (!this.product()) return;
     if (this.isOwnerSeller()) {
@@ -377,7 +414,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     }
 
     this.biddingActionLoading.set(true);
-    const bidderId = this.userSession.currentUser().id;
+    const bidderId = this.authService.currentUser()!.id;
 
     this.biddingService.placeBid(this.product()!.auctionId, bidderId, {
       bidAmount: this.bidAmount,
@@ -402,7 +439,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     }
 
     this.biddingActionLoading.set(true);
-    const bidderId = this.userSession.currentUser().id;
+    const bidderId = this.authService.currentUser()!.id;
 
     this.biddingService.buyNow(this.product()!.auctionId, bidderId).subscribe({
       next: (res) => {
