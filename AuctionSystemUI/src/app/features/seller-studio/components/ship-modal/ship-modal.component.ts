@@ -158,12 +158,11 @@ export class ShipModalComponent {
       return;
     }
 
-    const sellerId = this.userSession.currentUser().id;
     const cName = this.courierName;
 
     this.submitting.set(true);
 
-    this.orderService.shipOrder(sellerId, this.order.orderId, {
+    this.orderService.shipOrder(this.order.orderId, {
       courierName: cName,
       trackingNumber: tNum
     }).subscribe({

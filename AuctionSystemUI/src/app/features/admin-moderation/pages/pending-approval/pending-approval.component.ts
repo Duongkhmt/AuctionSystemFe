@@ -1,88 +1,133 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminApiService } from '../../services/admin-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { LanguageService } from '../../../../core/services/language.service';
 import { ProductResponse } from '../../../../shared/models/product.model';
-import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge.component';
 import { ProductDetailModalComponent } from '../../../../shared/components/product-detail-modal/product-detail-modal.component';
 import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
 
+/**
+ * ====================================================================================
+ * 🛡️ PENDING APPROVAL COMPONENT (Duyệt Bài Đăng Chờ Xuất Bản - Chuẩn 100% Mockup Gold Luxe)
+ * ====================================================================================
+ */
 @Component({
   selector: 'app-pending-approval',
   standalone: true,
-  imports: [CommonModule, FormsModule, StatusBadgeComponent, ProductDetailModalComponent, CurrencyVndPipe],
+  imports: [CommonModule, FormsModule, ProductDetailModalComponent, CurrencyVndPipe],
   template: `
-    <div class="space-y-6">
-      <div>
-        <h1 class="text-2xl font-black text-white">Duyệt Bài Đăng Chờ Xuất Bản</h1>
-        <p class="text-xs text-slate-400 mt-1">Danh sách tất cả sản phẩm ở trạng thái PENDING chờ Ban Quản Trị thẩm định.</p>
+    <div class="space-y-6 max-w-7xl mx-auto">
+      
+      <!-- Header Banner Tiêu Đề -->
+      <div class="border-b border-emerald-900/30 pb-4">
+        <span class="text-[11px] font-bold tracking-widest text-[#c5a059] uppercase">
+          — THẨM ĐỊNH NỘI DUNG
+        </span>
+        <h1 class="text-3xl font-serif font-bold text-white tracking-tight mt-1">
+          Duyệt bài đăng chờ xuất bản
+        </h1>
+        <p class="text-xs text-slate-400 mt-1">
+          Danh sách sản phẩm đang chờ Ban Quản Trị thẩm định trước khi lên sàn.
+        </p>
       </div>
 
+      <!-- Filter Tabs Bar (Xem: Có bài chờ duyệt vs Xem: Đã xử lý hết) -->
+      <div class="flex items-center gap-3">
+        <button
+          (click)="activeTab.set('PENDING')"
+          [class]="activeTab() === 'PENDING' ? 'bg-[#c5a059] text-slate-950 font-bold shadow-lg shadow-[#c5a059]/20' : 'bg-[#07120d] text-slate-400 border border-emerald-900/40 hover:text-white'"
+          class="px-5 py-2.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-2"
+        >
+          <span>Xem: Có bài chờ duyệt</span>
+          <span class="px-1.5 py-0.5 rounded bg-slate-950/80 text-[10px] font-mono" [class.text-slate-950]="activeTab() === 'PENDING'">
+            {{ pendingProducts().length }}
+          </span>
+        </button>
+
+        <button
+          (click)="activeTab.set('PROCESSED')"
+          [class]="activeTab() === 'PROCESSED' ? 'bg-[#c5a059] text-slate-950 font-bold shadow-lg shadow-[#c5a059]/20' : 'bg-[#07120d] text-slate-400 border border-emerald-900/40 hover:text-white'"
+          class="px-5 py-2.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-2"
+        >
+          <span>Xem: Đã xử lý hết</span>
+        </button>
+      </div>
+
+      <!-- Content Area -->
       @if (loading()) {
-        <div class="h-64 rounded-2xl bg-slate-900/40 border border-slate-800 animate-pulse"></div>
-      } @else if (pendingProducts().length === 0) {
-        <div class="text-center py-16 bg-slate-900/30 rounded-3xl border border-slate-800 p-8">
-          <div class="text-4xl mb-3">✅</div>
-          <h3 class="text-base font-bold text-slate-300">Không có bài đăng nào chờ duyệt</h3>
-          <p class="text-xs text-slate-500 mt-1">Toàn bộ sản phẩm gửi lên đã được xử lý xong.</p>
+        <div class="space-y-4 pt-2">
+          @for (i of [1,2]; track i) {
+            <div class="h-28 rounded-2xl bg-[#07120d] border border-emerald-900/30 animate-pulse"></div>
+          }
+        </div>
+      } @else if (displayedList().length === 0) {
+        <!-- Khung Hiển Thị Rỗng Chuẩn Mockup -->
+        <div class="py-24 bg-[#050b08]/80 border border-emerald-900/30 rounded-2xl text-center flex flex-col items-center justify-center p-8 space-y-4 shadow-2xl">
+          <div class="w-16 h-16 rotate-45 border-2 border-[#c5a059]/60 bg-[#c5a059]/10 flex items-center justify-center mb-2 shadow-inner">
+            <span class="-rotate-45 text-[#c5a059] font-serif font-black text-2xl">✓</span>
+          </div>
+
+          <h3 class="text-lg font-serif font-bold text-white tracking-wide">
+            Không có bài đăng nào chờ duyệt
+          </h3>
+
+          <p class="text-xs text-slate-400 max-w-md leading-relaxed">
+            Toàn bộ sản phẩm gửi lên đã được Ban Quản Trị thẩm định và xử lý hoàn tất.
+          </p>
         </div>
       } @else {
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          @for (item of pendingProducts(); track item.productId) {
-            <div class="bg-slate-900 border border-slate-800 hover:border-indigo-500/40 rounded-2xl p-6 space-y-4 shadow-xl flex flex-col justify-between transition-all">
+        <!-- Danh Sách Các Lô Bài Đăng Hàng Ngang (Horizontal Card Rows Chuẩn Màn Hình Khách Gửi) -->
+        <div class="space-y-4 pt-2">
+          @for (item of displayedList(); track item.productId) {
+            <div class="group bg-[#07120d] border border-emerald-900/40 hover:border-[#c5a059]/60 rounded-2xl p-5 shadow-xl transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6">
               
-              <!-- Clickable Content Box to Open Detail Modal -->
-              <div (click)="previewProduct.set(item)" class="space-y-3 cursor-pointer group">
-                <div class="flex items-start justify-between gap-2">
-                  <h3 class="font-bold text-base text-white group-hover:text-indigo-400 transition-colors leading-snug">{{ item.title }}</h3>
-                  <app-status-badge [status]="item.status" />
+              <!-- Bên Trái: Thumbnail & Nội Dung Thông Tin -->
+              <div class="flex items-center gap-5 flex-1 min-w-0">
+                
+                <!-- Box Ảnh Thumbnail -->
+                <div (click)="previewProduct.set(item)" class="w-32 h-24 bg-[#050b08] border border-emerald-900/40 rounded-xl overflow-hidden shrink-0 cursor-pointer flex items-center justify-center group-hover:border-[#c5a059]/50 transition-colors">
+                  @if (item.images && item.images.length > 0 && item.images[0].imageUrl) {
+                    <img [src]="item.images[0].imageUrl" [alt]="item.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  } @else {
+                    <span class="text-xs text-slate-500 font-medium">Ảnh sản phẩm</span>
+                  }
                 </div>
 
-                <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">{{ item.description }}</p>
-
-                <!-- Media Preview -->
-                @if (item.images && item.images.length > 0) {
-                  <div class="h-44 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden relative">
-                    <img [src]="item.images[0].imageUrl" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs font-bold text-white gap-1.5">
-                      <span>👁️ Click để đọc chi tiết sản phẩm</span>
-                    </div>
+                <!-- Chi Tiết Sản Phẩm -->
+                <div class="space-y-1.5 min-w-0 flex-1">
+                  <div class="text-[10px] font-mono font-bold tracking-widest text-[#c5a059] uppercase">
+                    LOT — CHỜ CẤP MÃ
                   </div>
-                }
 
-                <div class="grid grid-cols-2 gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
-                  <div>
-                    <span class="text-slate-500 text-[10px] block">Loại hình</span>
-                    <span class="font-mono text-indigo-300 font-bold">{{ item.auctionType }}</span>
-                  </div>
-                  <div>
-                    <span class="text-slate-500 text-[10px] block">Giá khởi điểm</span>
-                    <span class="font-mono text-emerald-400 font-bold">{{ item.startPrice | currencyVnd }}</span>
+                  <h3 (click)="previewProduct.set(item)" class="font-serif font-bold text-lg text-white group-hover:text-[#c5a059] transition-colors truncate cursor-pointer">
+                    {{ item.title }}
+                  </h3>
+
+                  <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-slate-400">
+                    <span>Người bán: <strong class="text-slate-200 font-semibold">{{ item.sellerName || 'Văn Dương' }}</strong></span>
+                    <span>Danh mục: <strong class="text-slate-200 font-semibold">{{ item.categoryName || 'Đồng Hồ & Trang Sức' }}</strong></span>
+                    <span>Giá khởi điểm: <strong class="text-[#c5a059] font-mono font-bold">{{ item.startPrice | currencyVnd }}</strong></span>
                   </div>
                 </div>
+
               </div>
 
-              <!-- Action Buttons -->
-              <div class="pt-4 border-t border-slate-800 flex items-center gap-2">
+              <!-- Bên Phải: Nút Thao Tác Từ Chối / Phê Duyệt -->
+              <div class="flex items-center gap-3 shrink-0">
                 <button
-                  (click)="previewProduct.set(item)"
-                  class="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl"
+                  (click)="openRejectModal(item)"
+                  class="px-5 py-2.5 rounded-xl text-xs font-semibold border border-rose-800/60 bg-rose-950/30 hover:bg-rose-600 hover:text-white text-rose-300 transition-all cursor-pointer"
                 >
-                  👁️ Xem Chi Tiết
+                  Từ chối
                 </button>
 
                 <button
                   (click)="approve(item.productId)"
-                  class="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-1.5"
+                  class="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#c5a059] hover:bg-[#d4af66] text-slate-950 shadow-lg shadow-[#c5a059]/20 transition-all cursor-pointer"
                 >
-                  <span>✓ Chấp Thuận</span>
-                </button>
-                <button
-                  (click)="openRejectModal(item)"
-                  class="py-2.5 px-3 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
-                >
-                  <span>✕ Từ Chối</span>
+                  Phê duyệt
                 </button>
               </div>
 
@@ -91,7 +136,7 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
         </div>
       }
 
-      <!-- Shared Product Detail Modal -->
+      <!-- Component Modal Xem Chi Tiết -->
       <app-product-detail-modal
         [product]="previewProduct()"
         [showAdminActions]="true"
@@ -100,18 +145,18 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
         (reject)="onModalReject($event)"
       />
 
-      <!-- Reject Reason Modal -->
+      <!-- Modal Nhập Lý Do Từ Chối -->
       @if (selectedProductForReject()) {
         <div class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-            <h3 class="text-lg font-bold text-white">Từ Chối Bài Đăng #{{ selectedProductForReject()!.productId }}</h3>
-            <p class="text-xs text-slate-400">Vui lòng cung cấp lý do từ chối cụ thể gửi cho Seller:</p>
+          <div class="max-w-md w-full bg-[#07120d] border border-emerald-900/50 rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 class="text-lg font-serif font-bold text-white">Từ Chối Bài Đăng #{{ selectedProductForReject()!.productId }}</h3>
+            <p class="text-xs text-slate-400">Vui lòng cung cấp lý do từ chối cụ thể gửi tới Người Bán:</p>
 
             <textarea
               [(ngModel)]="rejectionReason"
               rows="3"
-              placeholder="Nhập lý do từ chối (Ví dụ: Ảnh sản phẩm không rõ ràng, mô tả sai danh mục...)"
-              class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:border-rose-500"
+              placeholder="Nhập lý do từ chối (Ví dụ: Ảnh sản phẩm bị mờ, thông tin chưa đầy đủ...)"
+              class="w-full px-4 py-3 bg-[#050b08] border border-emerald-900/50 rounded-xl text-xs text-white placeholder-slate-600 focus:border-[#c5a059] focus:outline-none"
             ></textarea>
 
             <div class="flex items-center justify-end gap-3 pt-2">
@@ -121,7 +166,7 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
               <button
                 (click)="confirmReject()"
                 [disabled]="!rejectionReason.trim()"
-                class="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-600/30"
+                class="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-600/30"
               >
                 Xác Nhận Từ Chối
               </button>
@@ -135,13 +180,22 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
 export class PendingApprovalComponent implements OnInit {
   private adminService = inject(AdminApiService);
   private toastService = inject(ToastService);
+  langService = inject(LanguageService);
 
   pendingProducts = signal<ProductResponse[]>([]);
   loading = signal<boolean>(true);
+  activeTab = signal<'PENDING' | 'PROCESSED'>('PENDING');
 
   previewProduct = signal<ProductResponse | null>(null);
   selectedProductForReject = signal<ProductResponse | null>(null);
   rejectionReason = '';
+
+  displayedList = computed(() => {
+    if (this.activeTab() === 'PENDING') {
+      return this.pendingProducts();
+    }
+    return [];
+  });
 
   ngOnInit(): void {
     this.loadPending();
@@ -161,7 +215,7 @@ export class PendingApprovalComponent implements OnInit {
   approve(productId: number): void {
     this.adminService.approveProduct(productId).subscribe({
       next: () => {
-        this.toastService.showSuccess('Đã Duyệt Bài', `Sản phẩm #${productId} đã chính thức được kích hoạt trên sàn!`);
+        this.toastService.showSuccess('Đã Phê Duyệt', `Bài đăng #${productId} đã chính thức được phê duyệt xuất bản lên sàn!`);
         this.previewProduct.set(null);
         this.loadPending();
       }
@@ -188,7 +242,7 @@ export class PendingApprovalComponent implements OnInit {
 
     this.adminService.rejectProduct(p.productId, { rejectionReason: this.rejectionReason }).subscribe({
       next: () => {
-        this.toastService.showSuccess('Đã Từ Chối Bài', `Sản phẩm #${p.productId} đã bị từ chối với lý do lưu vết.`);
+        this.toastService.showSuccess('Đã Từ Chối', `Sản phẩm #${p.productId} đã bị từ chối với lý do lưu vết.`);
         this.selectedProductForReject.set(null);
         this.loadPending();
       }

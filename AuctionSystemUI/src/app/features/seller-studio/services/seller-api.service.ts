@@ -11,36 +11,36 @@ import { snakeToCamelKeys } from '../../../core/utils/case-converter.util';
 export class SellerApiService {
   private http = inject(HttpClient);
 
-  getSellerProducts(sellerId: number): Observable<ProductResponse[]> {
-    return this.http.get<any[]>(API_ENDPOINTS.SELLER_PRODUCTS(sellerId)).pipe(
+  getSellerProducts(): Observable<ProductResponse[]> {
+    return this.http.get<any[]>(API_ENDPOINTS.SELLER_PRODUCTS).pipe(
       map((res) => snakeToCamelKeys<ProductResponse[]>(res))
     );
   }
 
-  createProduct(sellerId: number, formData: FormData): Observable<ProductResponse> {
-    return this.http.post<any>(API_ENDPOINTS.SELLER_PRODUCTS(sellerId), formData).pipe(
+  createProduct(formData: FormData): Observable<ProductResponse> {
+    return this.http.post<any>(API_ENDPOINTS.SELLER_PRODUCTS, formData).pipe(
       map((res) => snakeToCamelKeys<ProductResponse>(res))
     );
   }
 
-  updateProduct(sellerId: number, id: number, formData: FormData): Observable<ProductResponse> {
-    return this.http.put<any>(API_ENDPOINTS.SELLER_PRODUCT_BY_ID(sellerId, id), formData).pipe(
+  updateProduct(id: number, formData: FormData): Observable<ProductResponse> {
+    return this.http.put<any>(API_ENDPOINTS.SELLER_PRODUCT_BY_ID(id), formData).pipe(
       map((res) => snakeToCamelKeys<ProductResponse>(res))
     );
   }
 
-  deleteProduct(sellerId: number, id: number): Observable<void> {
-    return this.http.delete<void>(API_ENDPOINTS.SELLER_PRODUCT_BY_ID(sellerId, id));
+  deleteProduct(id: number): Observable<void> {
+    return this.http.delete<void>(API_ENDPOINTS.SELLER_PRODUCT_BY_ID(id));
   }
 
-  cancelAuction(sellerId: number, id: number): Observable<ProductResponse> {
-    return this.http.put<any>(API_ENDPOINTS.SELLER_CANCEL_AUCTION(sellerId, id), {}).pipe(
+  cancelAuction(id: number): Observable<ProductResponse> {
+    return this.http.put<any>(API_ENDPOINTS.SELLER_CANCEL_AUCTION(id), {}).pipe(
       map((res) => snakeToCamelKeys<ProductResponse>(res))
     );
   }
 
-  relistAuction(sellerId: number, auctionId: number): Observable<ProductResponse> {
-    return this.http.post<any>(API_ENDPOINTS.SELLER_RELIST_AUCTION(sellerId, auctionId), {}).pipe(
+  relistAuction(auctionId: number): Observable<ProductResponse> {
+    return this.http.post<any>(API_ENDPOINTS.SELLER_RELIST_AUCTION(auctionId), {}).pipe(
       map((res) => snakeToCamelKeys<ProductResponse>(res))
     );
   }
