@@ -151,12 +151,7 @@ export class LoginComponent implements OnInit {
         next: (res) => {
           this.loading.set(false);
           this.toastService.showSuccess('Đăng nhập thành công', `Chào mừng ${res.username}!`);
-          
-          if (res.role === 'ADMIN') {
-            this.router.navigate(['/admin']);
-          } else {
-            this.router.navigateByUrl(this.returnUrl);
-          }
+          this.router.navigateByUrl(this.returnUrl);
         },
         error: (err) => {
           this.loading.set(false);

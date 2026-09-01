@@ -42,7 +42,9 @@ Sơ đồ định tuyến tổng thể trong `app.routes.ts`:
 │
 └── admin/ (AdminLayoutComponent + authGuard + roleGuard(['ADMIN']))
     └── (Lazy Load ADMIN_ROUTES)
-        └── '' -> PendingApprovalComponent
+        ├── '' -> PendingApprovalComponent (Duyệt bài đăng)
+        ├── categories -> CategoryManagementComponent (Quản lý thể loại / danh mục)
+        └── users -> UserManagementComponent (Quản lý người dùng)
 ```
 
 ---
@@ -61,17 +63,21 @@ Tất cả các tuyến đường nghiệp vụ đều dùng cú pháp `loadChil
 ```
 Lợi ích: Trình duyệt chỉ nạp file Javascript chứa giao diện Admin khi tài khoản Quản trị viên truy cập vào `/admin`.
 
-### 2. Bảo Vệ Route Theo Vai Trò (`roleGuard`)
-- Đường dẫn `/my-bids` (Tài khoản của tôi - Các lô đã thắng) chỉ dành cho vai trò `USER`. Tài khoản `ADMIN` sẽ bị ngăn truy cập và chuyển hướng về trang quản trị.
-- Đường dẫn `/admin` (Quản lý bài đăng) chỉ dành riêng cho vai trò `ADMIN`.
+### 2. Luồng Điều Hướng Đăng Nhập Đã Chuẩn Hóa
+- Tất cả mọi người dùng (`USER`, `ADMIN`) sau khi đăng nhập thành công từ trang `/login` sẽ **luôn quay về Trang Chủ Sàn Đấu Giá (`/`)**.
+- Quản trị viên `ADMIN` có thể bấm nút **`Quản Lý Bài Đăng`** trên thanh Navigation Header để tiến vào Admin Portal bất cứ lúc nào.
+
+### 3. Bảo Vệ Route Theo Vai Trò (`roleGuard`)
+- Đường dẫn `/my-bids` (Tài khoản của tôi - Các lô đã thắng) chỉ dành cho vai trò `USER`. Tài khoản `ADMIN` sẽ bị ngăn truy cập và tự động chuyển hướng về trang quản trị.
+- Đường dẫn `/admin` (Quản lý bài đăng, danh mục, người dùng) chỉ dành riêng cho vai trò `ADMIN`.
 - Thanh Header công khai sẽ tự động ẩn `Tài Khoản Của Tôi` đối với `ADMIN` và chỉ hiển thị `Quản Lý Bài Đăng`.
 
-### 3. View Transitions API (`withViewTransitions()`)
+### 4. View Transitions API (`withViewTransitions()`)
 Được đăng ký trong `app.config.ts`:
 ```typescript
 provideRouter(routes, withComponentInputBinding(), withViewTransitions())
 ```
 Lợi ích: Tận dụng Native Browser View Transitions API giúp trải nghiệm mượt mà giống như Native Application khi chuyển trang.
 
-### 4. Component Input Binding (`withComponentInputBinding()`)
+### 5. Component Input Binding (`withComponentInputBinding()`)
 Cho phép lấy `:id` trên URL trực tiếp qua `@Input() id!: number` thay vì phải inject `ActivatedRoute` để subscribe `paramMap`.
