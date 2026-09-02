@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map, throwError } from 'rxjs';
 import { API_ENDPOINTS } from '../config/api-endpoints.config';
 import { UserSession, UserRole } from '../../shared/models/enums.model';
 import { snakeToCamelKeys } from '../utils/case-converter.util';
@@ -69,12 +69,29 @@ export class AuthService {
   }
 
   refreshToken(): Observable<AuthResponse> {
-    const refreshToken = this.getRefreshToken();
-    return this.http.post<any>(API_ENDPOINTS.AUTH_REFRESH, { refresh_token: refreshToken }).pipe(
-      tap((res) => {
-        const camelRes = snakeToCamelKeys<AuthResponse>(res);
+    const token = this.getRefreshToken();
+    if (!token) {
+      return throwError(() => new Error('No refresh token available'));
+    }
+
+    return this.http.post<any>(API_ENDPOINTS.AUTH_REFRESH, { refreshToken: token }).pipe(
+      map((res) => snakeToCamelKeys<AuthResponse>(res)),
+      tap((camelRes) => {
         if (camelRes.accessToken) {
           localStorage.setItem(this.ACCESS_TOKEN_KEY, camelRes.accessToken);
+        }
+        if (camelRes.refreshToken) {
+          localStorage.setItem(this.REFRESH_TOKEN_KEY, camelRes.refreshToken);
+        }
+        const user = this.currentUser();
+        if (user) {
+          const updatedUser: UserSession = {
+            ...user,
+            accessToken: camelRes.accessToken,
+            refreshToken: camelRes.refreshToken
+          };
+          localStorage.setItem(this.USER_KEY, JSON.stringify(updatedUser));
+          this.currentUser.set(updatedUser);
         }
       })
     );
