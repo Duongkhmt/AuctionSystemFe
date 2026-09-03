@@ -170,7 +170,8 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
               {{ langService.translate('create.sectionB') }}
             </h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 gap-4">
+              <!-- Chọn Loại Đấu Giá -->
               <div>
                 <label class="block text-xs font-semibold text-slate-300 mb-2">
                   {{ langService.translate('create.auctionTypeLabel') }} <span class="text-rose-400">*</span>
@@ -183,80 +184,111 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
                   <option value="RESERVE">{{ langService.translate('create.typeReserve') }}</option>
                   <option value="BUY_NOW">{{ langService.translate('create.typeBuyNow') }}</option>
                 </select>
+
+                <!-- Helper Badge theo loại đấu giá -->
+                @if (formValue().auctionType === 'ENGLISH') {
+                  <p class="text-[11px] text-emerald-400/90 mt-2 bg-emerald-950/40 border border-emerald-900/40 rounded-xl p-2.5">
+                    💡 <strong>Đấu Giá Tăng Dần:</strong> Người thầu sau đặt giá cao hơn người trước tối thiểu 1 bước giá. Không áp dụng giá mua ngay và giá bảo lưu.
+                  </p>
+                } @else if (formValue().auctionType === 'RESERVE') {
+                  <p class="text-[11px] text-amber-400/90 mt-2 bg-amber-950/40 border border-amber-900/40 rounded-xl p-2.5">
+                    🔒 <strong>Đấu Giá Giá Bảo Lưu (Giá Ẩn):</strong> Đặt giá thầu tối thiểu mong muốn. Nếu khi hết giờ giá thầu chưa đạt Giá Ẩn này, sản phẩm sẽ không bán.
+                  </p>
+                } @else if (formValue().auctionType === 'BUY_NOW') {
+                  <p class="text-[11px] text-indigo-400/90 mt-2 bg-indigo-950/40 border border-indigo-900/40 rounded-xl p-2.5">
+                    ⚡ <strong>Mua Ngay Giá Cố Định:</strong> Người mua chỉ cần bấm mua với mức giá niêm yết để sở hữu ngay sản phẩm mà không cần đấu thầu tăng dần.
+                  </p>
+                }
               </div>
 
-              <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-2">
-                  {{ langService.translate('create.startPriceLabel') }} <span class="text-rose-400">*</span>
-                </label>
-                <input
-                  type="number"
-                  formControlName="startPrice"
-                  [ngClass]="isInvalid('startPrice') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-[#c5a059] focus:border-[#c5a059]'"
-                  class="w-full px-4 py-3 border rounded-xl text-xs font-mono font-bold focus:outline-none transition-all"
-                />
-              </div>
+              <!-- Trường Giá Khởi Điểm & Bước Giá (Dành cho ENGLISH và RESERVE) -->
+              @if (formValue().auctionType === 'ENGLISH' || formValue().auctionType === 'RESERVE') {
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-2">
+                      {{ langService.translate('create.startPriceLabel') }} <span class="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      formControlName="startPrice"
+                      [ngClass]="isInvalid('startPrice') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-[#c5a059] focus:border-[#c5a059]'"
+                      class="w-full px-4 py-3 border rounded-xl text-xs font-mono font-bold focus:outline-none transition-all"
+                    />
+                  </div>
 
-              <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-2">
-                  {{ langService.translate('create.bidStepLabel') }} <span class="text-rose-400">*</span>
-                </label>
-                <input
-                  type="number"
-                  formControlName="bidStep"
-                  [ngClass]="isInvalid('bidStep') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-slate-200 focus:border-[#c5a059]'"
-                  class="w-full px-4 py-3 border rounded-xl text-xs font-mono font-bold focus:outline-none transition-all"
-                />
-              </div>
-            </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-2">
+                      {{ langService.translate('create.bidStepLabel') }} <span class="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      formControlName="bidStep"
+                      [ngClass]="isInvalid('bidStep') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-slate-200 focus:border-[#c5a059]'"
+                      class="w-full px-4 py-3 border rounded-xl text-xs font-mono font-bold focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              }
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-1">{{ langService.translate('create.buyNowPriceLabel') }}</label>
-                <input
-                  type="number"
-                  formControlName="buyNowPrice"
-                  placeholder="Bỏ trống nếu không áp dụng mua ngay"
-                  class="w-full px-4 py-3 border border-emerald-900/50 bg-[#050b08] text-emerald-400 placeholder-slate-600 rounded-xl text-xs font-mono focus:border-[#c5a059] focus:outline-none"
-                />
-                <p class="text-[10px] text-slate-500 mt-1">{{ langService.translate('create.buyNowPriceSub') }}</p>
-              </div>
+              <!-- Trường Giá Bảo Lưu (Chỉ hiển thị khi RESERVE) -->
+              @if (formValue().auctionType === 'RESERVE') {
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1">
+                    🔒 {{ langService.translate('create.reservePriceLabel') }} <span class="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    formControlName="reservePrice"
+                    placeholder="Ví dụ: 5.000.000 (Giá ẩn tối thiểu chấp nhận bán)"
+                    [ngClass]="isInvalid('reservePrice') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-amber-400 focus:border-[#c5a059]'"
+                    class="w-full px-4 py-3 border rounded-xl text-xs font-mono font-bold focus:outline-none transition-all"
+                  />
+                  <p class="text-[10px] text-slate-500 mt-1">Giá Ẩn phải lớn hơn hoặc bằng Giá Khởi Điểm</p>
+                </div>
+              }
 
-              <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-1">{{ langService.translate('create.reservePriceLabel') }}</label>
-                <input
-                  type="number"
-                  formControlName="reservePrice"
-                  placeholder="Bỏ trống nếu không áp dụng giá bảo lưu"
-                  class="w-full px-4 py-3 border border-emerald-900/50 bg-[#050b08] text-amber-400 placeholder-slate-600 rounded-xl text-xs font-mono focus:border-[#c5a059] focus:outline-none"
-                />
-                <p class="text-[10px] text-slate-500 mt-1">{{ langService.translate('create.reservePriceSub') }}</p>
-              </div>
-            </div>
+              <!-- Trường Giá Mua Ngay (Chỉ hiển thị khi BUY_NOW) -->
+              @if (formValue().auctionType === 'BUY_NOW') {
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1">
+                    ⚡ Giá Mua Ngay Niêm Yết <span class="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    formControlName="buyNowPrice"
+                    placeholder="Ví dụ: 10.000.000 (Giá bán cố định)"
+                    [ngClass]="isInvalid('buyNowPrice') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-emerald-400 focus:border-[#c5a059]'"
+                    class="w-full px-4 py-3 border rounded-xl text-xs font-mono font-bold focus:outline-none transition-all"
+                  />
+                  <p class="text-[10px] text-slate-500 mt-1">Giá người mua thanh toán ngay để sở hữu sản phẩm</p>
+                </div>
+              }
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-2">
-                  {{ langService.translate('create.startTimeLabel') }} <span class="text-rose-400">*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  formControlName="startTime"
-                  [ngClass]="isInvalid('startTime') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-white focus:border-[#c5a059]'"
-                  class="w-full px-4 py-3 border rounded-xl text-xs focus:outline-none transition-all font-mono"
-                />
-              </div>
+              <!-- Thời Gian Bắt Đầu / Kết Thúc -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-2">
+                    {{ langService.translate('create.startTimeLabel') }} <span class="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    formControlName="startTime"
+                    [ngClass]="isInvalid('startTime') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-white focus:border-[#c5a059]'"
+                    class="w-full px-4 py-3 border rounded-xl text-xs focus:outline-none transition-all font-mono"
+                  />
+                </div>
 
-              <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-2">
-                  {{ langService.translate('create.endTimeLabel') }} <span class="text-rose-400">*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  formControlName="endTime"
-                  [ngClass]="isInvalid('endTime') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-white focus:border-[#c5a059]'"
-                  class="w-full px-4 py-3 border rounded-xl text-xs focus:outline-none transition-all font-mono"
-                />
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-2">
+                    {{ langService.translate('create.endTimeLabel') }} <span class="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    formControlName="endTime"
+                    [ngClass]="isInvalid('endTime') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-white focus:border-[#c5a059]'"
+                    class="w-full px-4 py-3 border rounded-xl text-xs focus:outline-none transition-all font-mono"
+                  />
+                </div>
               </div>
             </div>
 
@@ -403,6 +435,57 @@ export class CreateProductComponent implements OnInit {
       },
       error: (err) => console.error('Lỗi khi tải danh mục từ DB:', err)
     });
+
+    this.productForm.get('auctionType')?.valueChanges.subscribe((type) => {
+      this.onAuctionTypeChange(type);
+    });
+
+    this.productForm.get('buyNowPrice')?.valueChanges.subscribe((buyPrice) => {
+      if (this.productForm.get('auctionType')?.value === 'BUY_NOW' && buyPrice) {
+        this.productForm.patchValue({ startPrice: buyPrice, bidStep: 1 }, { emitEvent: false });
+      }
+    });
+
+    // Run initial type setup
+    this.onAuctionTypeChange(this.productForm.get('auctionType')?.value || 'ENGLISH');
+  }
+
+  onAuctionTypeChange(type: string | null): void {
+    const reserveCtrl = this.productForm.get('reservePrice');
+    const buyNowCtrl = this.productForm.get('buyNowPrice');
+    const startCtrl = this.productForm.get('startPrice');
+    const stepCtrl = this.productForm.get('bidStep');
+
+    if (type === 'ENGLISH') {
+      buyNowCtrl?.clearValidators();
+      buyNowCtrl?.setValue(null);
+      reserveCtrl?.clearValidators();
+      reserveCtrl?.setValue(null);
+
+      startCtrl?.setValidators([Validators.required, Validators.min(1)]);
+      stepCtrl?.setValidators([Validators.required, Validators.min(1)]);
+    } else if (type === 'RESERVE') {
+      buyNowCtrl?.clearValidators();
+      buyNowCtrl?.setValue(null);
+
+      reserveCtrl?.setValidators([Validators.required, Validators.min(1)]);
+      startCtrl?.setValidators([Validators.required, Validators.min(1)]);
+      stepCtrl?.setValidators([Validators.required, Validators.min(1)]);
+    } else if (type === 'BUY_NOW') {
+      reserveCtrl?.clearValidators();
+      reserveCtrl?.setValue(null);
+
+      buyNowCtrl?.setValidators([Validators.required, Validators.min(1)]);
+      if (buyNowCtrl?.value) {
+        startCtrl?.setValue(buyNowCtrl.value);
+      }
+      stepCtrl?.setValue(1);
+    }
+
+    reserveCtrl?.updateValueAndValidity();
+    buyNowCtrl?.updateValueAndValidity();
+    startCtrl?.updateValueAndValidity();
+    stepCtrl?.updateValueAndValidity();
   }
 
   isInvalid(controlName: string): boolean {
@@ -453,18 +536,28 @@ export class CreateProductComponent implements OnInit {
 
     const formData = new FormData();
     const val = this.productForm.value;
+    const type = val.auctionType;
 
     formData.append('categoryId', String(val.categoryId));
     formData.append('title', val.title!);
     formData.append('description', val.description!);
-    formData.append('auctionType', val.auctionType!);
-    formData.append('startPrice', String(val.startPrice));
-    formData.append('bidStep', String(val.bidStep));
+    formData.append('auctionType', type!);
     formData.append('startTime', val.startTime!);
     formData.append('endTime', val.endTime!);
 
-    if (val.buyNowPrice) formData.append('buyNowPrice', String(val.buyNowPrice));
-    if (val.reservePrice) formData.append('reservePrice', String(val.reservePrice));
+    if (type === 'ENGLISH') {
+      formData.append('startPrice', String(val.startPrice));
+      formData.append('bidStep', String(val.bidStep));
+    } else if (type === 'RESERVE') {
+      formData.append('startPrice', String(val.startPrice));
+      formData.append('bidStep', String(val.bidStep));
+      formData.append('reservePrice', String(val.reservePrice));
+    } else if (type === 'BUY_NOW') {
+      const buyPrice = val.buyNowPrice || val.startPrice || 0;
+      formData.append('startPrice', String(buyPrice));
+      formData.append('bidStep', '1');
+      formData.append('buyNowPrice', String(buyPrice));
+    }
 
     this.selectedFiles().forEach((file) => {
       formData.append('images', file);

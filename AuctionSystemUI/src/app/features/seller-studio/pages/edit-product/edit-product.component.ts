@@ -10,12 +10,12 @@ import { UserSessionService } from '../../../../core/auth/user-session.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { LanguageService } from '../../../../core/services/language.service';
 import { AuctionType } from '../../../../shared/models/enums.model';
-import { ProductResponse } from '../../../../shared/models/product.model';
+import { ProductResponse, ProductImageResponse } from '../../../../shared/models/product.model';
 import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
 
 /**
  * ====================================================================================
- * ✏️ EDIT PRODUCT COMPONENT (Trang Chỉnh Sửa Sản Phẩm - Chuẩn Gold Luxury Song Ngữ)
+ * ✏️ EDIT PRODUCT COMPONENT (Trang Chỉnh Sửa Sản Phẩm & Quản Lý Ảnh Xóa/Thêm)
  * ====================================================================================
  */
 @Component({
@@ -55,8 +55,8 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
           <!-- Cột Phía Trái: Form A & B -->
           <div class="lg:col-span-2 space-y-6">
             
-            <!-- Khung A. Thông tin sản phẩm -->
-            <div class="bg-[#07120d] border border-emerald-900/40 rounded-2xl p-6 space-y-5 shadow-xl">
+            <!-- Khung A. Thông tin sản phẩm & Hình ảnh -->
+            <div class="bg-[#07120d] border border-emerald-900/40 rounded-2xl p-6 space-y-6 shadow-xl">
               <h2 class="text-sm font-bold text-[#c5a059] tracking-wide flex items-center gap-2 border-b border-emerald-900/30 pb-3">
                 {{ langService.translate('create.sectionA') }}
               </h2>
@@ -109,37 +109,112 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
                 ></textarea>
               </div>
 
-              <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-2">
-                  Bổ sung hình ảnh mới <span class="text-slate-400 font-normal">(Tùy chọn)</span>
-                </label>
-
-                <div
-                  (click)="fileInput.click()"
-                  class="border-2 border-dashed border-emerald-900/60 hover:border-[#c5a059]/80 bg-[#050b08] hover:bg-[#07120d] rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center space-y-2"
-                >
-                  <input
-                    #fileInput
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    (change)="onFileSelected($event)"
-                    class="hidden"
-                  />
-                  <span class="text-2xl text-[#c5a059]">📸</span>
-                  <p class="text-xs font-bold text-slate-200">
-                    Bấm vào đây để chọn thêm hình ảnh mới
-                  </p>
+              <!-- ========================================================================= -->
+              <!-- 🖼️ KHUNG QUẢN LÝ HÌNH ẢNH SẢN PHẨM (XÓA ẢNH CŨ & THÊM ẢNH MỚI) -->
+              <!-- ========================================================================= -->
+              <div class="space-y-5 pt-4 border-t border-emerald-900/30">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xs font-bold text-white tracking-wide flex items-center gap-1.5">
+                    <span>🖼️</span> {{ langService.translate('create.imagesLabel') }}
+                  </h3>
+                  <span class="text-[11px] font-mono text-slate-400">
+                    {{ langService.translate('edit.totalImagesCount') }} 
+                    <strong [ngClass]="totalRemainingImages() < 1 ? 'text-rose-400 font-black' : 'text-[#c5a059] font-bold'">
+                      {{ totalRemainingImages() }}
+                    </strong> / 20
+                  </span>
                 </div>
 
-                @if (selectedFilePreviews().length > 0) {
-                  <div class="grid grid-cols-4 sm:grid-cols-6 gap-3 mt-4">
-                    @for (src of selectedFilePreviews(); track $index) {
-                      <div class="relative group h-20 bg-slate-950 border border-emerald-900/50 rounded-xl overflow-hidden">
-                        <img [src]="src" class="w-full h-full object-cover" />
-                      </div>
-                    }
+                <!-- 1. Danh Sách Ảnh Đã Đăng (Ảnh Gốc Tải Từ Hệ Thống) -->
+                @if (existingImages().length > 0) {
+                  <div class="space-y-3">
+                    <p class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                      <span>{{ langService.translate('edit.existingImagesTitle') }} ({{ existingImages().length }})</span>
+                      <span class="text-[11px] text-amber-400/90 font-normal">
+                        Rê chuột vào ảnh và bấm nút 🗑️ để xóa ảnh cũ
+                      </span>
+                    </p>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      @for (img of existingImages(); track img.id; let idx = $index) {
+                        <div class="relative group h-28 bg-[#050b08] border border-emerald-900/60 rounded-xl overflow-hidden shadow-md">
+                          <img [src]="img.imageUrl" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          
+                          <span class="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-black/80 backdrop-blur text-[10px] font-bold text-[#c5a059] border border-[#c5a059]/30">
+                            Ảnh #{{ idx + 1 }}
+                          </span>
+
+                          <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center p-2">
+                            <button
+                              type="button"
+                              (click)="removeExistingImage(img.id)"
+                              class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold shadow-lg transition-all flex items-center gap-1 scale-95 hover:scale-100 cursor-pointer"
+                            >
+                              <span>🗑️</span>
+                              <span>{{ langService.translate('edit.deleteImageBtn') }}</span>
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
                   </div>
+                }
+
+                <!-- 2. Khung Bổ Sung Hình Ảnh Mới -->
+                <div class="space-y-3 pt-2">
+                  <label class="block text-xs font-semibold text-slate-300">
+                    {{ langService.translate('edit.newImagesTitle') }} <span class="text-slate-400 font-normal">(Tùy chọn)</span>
+                  </label>
+
+                  <div
+                    (click)="fileInput.click()"
+                    class="border-2 border-dashed border-emerald-900/60 hover:border-[#c5a059]/80 bg-[#050b08] hover:bg-[#07120d] rounded-2xl p-5 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center space-y-2"
+                  >
+                    <input
+                      #fileInput
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      (change)="onFileSelected($event)"
+                      class="hidden"
+                    />
+                    <span class="text-2xl text-[#c5a059]">📸</span>
+                    <p class="text-xs font-bold text-slate-200">
+                      {{ langService.translate('edit.newImagesSub') }}
+                    </p>
+                    <p class="text-[10px] text-slate-500">
+                      {{ langService.translate('create.dropzoneSub') }}
+                    </p>
+                  </div>
+
+                  @if (selectedFilePreviews().length > 0) {
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+                      @for (src of selectedFilePreviews(); track $index; let idx = $index) {
+                        <div class="relative group h-28 bg-[#050b08] border border-emerald-900/60 rounded-xl overflow-hidden shadow-md">
+                          <img [src]="src" class="w-full h-full object-cover" />
+                          
+                          <span class="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-emerald-950/90 backdrop-blur text-[10px] font-bold text-emerald-400 border border-emerald-700/50">
+                            Ảnh mới #{{ idx + 1 }}
+                          </span>
+
+                          <button
+                            type="button"
+                            (click)="removeNewFile(idx)"
+                            class="absolute top-1.5 right-1.5 p-1 bg-rose-600/90 hover:bg-rose-500 text-white rounded-full text-[10px] font-bold w-6 h-6 flex items-center justify-center shadow-lg transition-all cursor-pointer"
+                            title="Hủy chọn file mới này"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+
+                @if (totalRemainingImages() < 1) {
+                  <p class="text-rose-400 font-bold text-xs bg-rose-950/40 border border-rose-900/50 rounded-xl p-3 text-center">
+                    ⚠️ {{ langService.translate('edit.minImageWarning') }}
+                  </p>
                 }
               </div>
 
@@ -151,48 +226,123 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
                 {{ langService.translate('create.sectionB') }}
               </h2>
 
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label class="block text-xs font-semibold text-slate-300 mb-2">{{ langService.translate('create.auctionTypeLabel') }} <span class="text-rose-400">*</span></label>
-                  <select formControlName="auctionType" class="w-full px-4 py-3 border border-emerald-900/50 bg-[#050b08] text-white rounded-xl text-xs focus:border-[#c5a059] focus:outline-none">
-                    <option value="ENGLISH">{{ langService.translate('create.typeEnglish') }}</option>
-                    <option value="RESERVE">{{ langService.translate('create.typeReserve') }}</option>
-                    <option value="BUY_NOW">{{ langService.translate('create.typeBuyNow') }}</option>
-                  </select>
-                </div>
+              <!-- Chọn Loại Đấu Giá -->
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-2">
+                  {{ langService.translate('create.auctionTypeLabel') }} <span class="text-rose-400">*</span>
+                </label>
+                <select
+                  formControlName="auctionType"
+                  class="w-full px-4 py-3 border border-emerald-900/50 bg-[#050b08] text-white rounded-xl text-xs focus:border-[#c5a059] focus:outline-none cursor-pointer"
+                >
+                  <option value="ENGLISH">{{ langService.translate('create.typeEnglish') }}</option>
+                  <option value="RESERVE">{{ langService.translate('create.typeReserve') }}</option>
+                  <option value="BUY_NOW">{{ langService.translate('create.typeBuyNow') }}</option>
+                </select>
 
-                <div>
-                  <label class="block text-xs font-semibold text-slate-300 mb-2">{{ langService.translate('create.startPriceLabel') }} <span class="text-rose-400">*</span></label>
-                  <input type="number" formControlName="startPrice" class="w-full px-4 py-3 border border-emerald-900/50 bg-[#050b08] text-[#c5a059] font-mono font-bold rounded-xl text-xs focus:border-[#c5a059] focus:outline-none" />
-                </div>
-
-                <div>
-                  <label class="block text-xs font-semibold text-slate-300 mb-2">{{ langService.translate('create.bidStepLabel') }} <span class="text-rose-400">*</span></label>
-                  <input type="number" formControlName="bidStep" class="w-full px-4 py-3 border border-emerald-900/50 bg-[#050b08] text-slate-200 font-mono font-bold rounded-xl text-xs focus:border-[#c5a059] focus:outline-none" />
-                </div>
+                <!-- Helper Badge theo loại đấu giá -->
+                @if (formValue().auctionType === 'ENGLISH') {
+                  <p class="text-[11px] text-emerald-400/90 mt-2 bg-emerald-950/40 border border-emerald-900/40 rounded-xl p-2.5">
+                    💡 <strong>Đấu Giá Tăng Dần:</strong> Người thầu sau đặt giá cao hơn người trước tối thiểu 1 bước giá. Không áp dụng giá mua ngay và giá bảo lưu.
+                  </p>
+                } @else if (formValue().auctionType === 'RESERVE') {
+                  <p class="text-[11px] text-amber-400/90 mt-2 bg-amber-950/40 border border-amber-900/40 rounded-xl p-2.5">
+                    🔒 <strong>Đấu Giá Giá Bảo Lưu (Giá Ẩn):</strong> Đặt giá thầu tối thiểu mong muốn. Nếu khi hết giờ giá thầu chưa đạt Giá Ẩn này, sản phẩm sẽ không bán.
+                  </p>
+                } @else if (formValue().auctionType === 'BUY_NOW') {
+                  <p class="text-[11px] text-indigo-400/90 mt-2 bg-indigo-950/40 border border-indigo-900/40 rounded-xl p-2.5">
+                    ⚡ <strong>Mua Ngay Giá Cố Định:</strong> Người mua chỉ cần bấm mua với mức giá niêm yết để sở hữu ngay sản phẩm mà không cần đấu thầu tăng dần.
+                  </p>
+                }
               </div>
 
+              <!-- Trường Giá Khởi Điểm & Bước Giá (Dành cho ENGLISH và RESERVE) -->
+              @if (formValue().auctionType === 'ENGLISH' || formValue().auctionType === 'RESERVE') {
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-2">
+                      {{ langService.translate('create.startPriceLabel') }} <span class="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      formControlName="startPrice"
+                      [ngClass]="isInvalid('startPrice') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-[#c5a059] focus:border-[#c5a059]'"
+                      class="w-full px-4 py-3 border rounded-xl text-xs font-mono font-bold focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-2">
+                      {{ langService.translate('create.bidStepLabel') }} <span class="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      formControlName="bidStep"
+                      [ngClass]="isInvalid('bidStep') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-slate-200 focus:border-[#c5a059]'"
+                      class="w-full px-4 py-3 border rounded-xl text-xs font-mono font-bold focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              }
+
+              <!-- Trường Giá Bảo Lưu (Chỉ hiển thị khi RESERVE) -->
+              @if (formValue().auctionType === 'RESERVE') {
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1">
+                    🔒 {{ langService.translate('create.reservePriceLabel') }} <span class="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    formControlName="reservePrice"
+                    placeholder="Ví dụ: 5.000.000 (Giá ẩn tối thiểu chấp nhận bán)"
+                    [ngClass]="isInvalid('reservePrice') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-amber-400 focus:border-[#c5a059]'"
+                    class="w-full px-4 py-3 border rounded-xl text-xs font-mono font-bold focus:outline-none transition-all"
+                  />
+                  <p class="text-[10px] text-slate-500 mt-1">Giá Ẩn phải lớn hơn hoặc bằng Giá Khởi Điểm</p>
+                </div>
+              }
+
+              <!-- Trường Giá Mua Ngay (Chỉ hiển thị khi BUY_NOW) -->
+              @if (formValue().auctionType === 'BUY_NOW') {
+                <div>
+                  <label class="block text-xs font-semibold text-slate-300 mb-1">
+                    ⚡ Giá Mua Ngay Niêm Yết <span class="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    formControlName="buyNowPrice"
+                    placeholder="Ví dụ: 10.000.000 (Giá bán cố định)"
+                    [ngClass]="isInvalid('buyNowPrice') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-emerald-400 focus:border-[#c5a059]'"
+                    class="w-full px-4 py-3 border rounded-xl text-xs font-mono font-bold focus:outline-none transition-all"
+                  />
+                  <p class="text-[10px] text-slate-500 mt-1">Giá người mua thanh toán ngay để sở hữu sản phẩm</p>
+                </div>
+              }
+
+              <!-- Thời Gian Bắt Đầu / Kết Thúc -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-semibold text-slate-300 mb-1">{{ langService.translate('create.buyNowPriceLabel') }}</label>
-                  <input type="number" formControlName="buyNowPrice" class="w-full px-4 py-3 border border-emerald-900/50 bg-[#050b08] text-emerald-400 rounded-xl text-xs font-mono focus:border-[#c5a059] focus:outline-none" />
+                  <label class="block text-xs font-semibold text-slate-300 mb-2">
+                    {{ langService.translate('create.startTimeLabel') }} <span class="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    formControlName="startTime"
+                    [ngClass]="isInvalid('startTime') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-white focus:border-[#c5a059]'"
+                    class="w-full px-4 py-3 border rounded-xl text-xs focus:outline-none transition-all font-mono"
+                  />
                 </div>
 
                 <div>
-                  <label class="block text-xs font-semibold text-slate-300 mb-1">{{ langService.translate('create.reservePriceLabel') }}</label>
-                  <input type="number" formControlName="reservePrice" class="w-full px-4 py-3 border border-emerald-900/50 bg-[#050b08] text-amber-400 rounded-xl text-xs font-mono focus:border-[#c5a059] focus:outline-none" />
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-xs font-semibold text-slate-300 mb-2">{{ langService.translate('create.startTimeLabel') }} <span class="text-rose-400">*</span></label>
-                  <input type="datetime-local" formControlName="startTime" class="w-full px-4 py-3 border border-emerald-900/50 bg-[#050b08] text-white font-mono rounded-xl text-xs focus:border-[#c5a059] focus:outline-none" />
-                </div>
-
-                <div>
-                  <label class="block text-xs font-semibold text-slate-300 mb-2">{{ langService.translate('create.endTimeLabel') }} <span class="text-rose-400">*</span></label>
-                  <input type="datetime-local" formControlName="endTime" class="w-full px-4 py-3 border border-emerald-900/50 bg-[#050b08] text-white font-mono rounded-xl text-xs focus:border-[#c5a059] focus:outline-none" />
+                  <label class="block text-xs font-semibold text-slate-300 mb-2">
+                    {{ langService.translate('create.endTimeLabel') }} <span class="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    formControlName="endTime"
+                    [ngClass]="isInvalid('endTime') ? 'border-rose-500/80 bg-rose-950/20 text-rose-100' : 'border-emerald-900/50 bg-[#050b08] text-white focus:border-[#c5a059]'"
+                    class="w-full px-4 py-3 border rounded-xl text-xs focus:outline-none transition-all font-mono"
+                  />
                 </div>
               </div>
 
@@ -203,19 +353,19 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
               <button
                 type="button"
                 routerLink="/seller"
-                class="px-6 py-3 bg-[#0d1a14] hover:bg-[#12241c] text-slate-300 border border-emerald-900/40 font-semibold text-xs rounded-xl transition-all"
+                class="px-6 py-3 bg-[#0d1a14] hover:bg-[#12241c] text-slate-300 border border-emerald-900/40 font-semibold text-xs rounded-xl transition-all cursor-pointer"
               >
                 {{ langService.translate('edit.cancelBtn') }}
               </button>
 
               <button
                 type="submit"
-                [disabled]="submitting()"
-                class="px-7 py-3 bg-[#c5a059] hover:bg-[#d4af66] disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-[#c5a059]/20 transition-all flex items-center gap-2"
+                [disabled]="submitting() || totalRemainingImages() < 1"
+                class="px-7 py-3 bg-[#c5a059] hover:bg-[#d4af66] disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-[#c5a059]/20 transition-all flex items-center gap-2 cursor-pointer"
               >
                 @if (submitting()) {
                   <span class="inline-block w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span>
-                  <span>Saving...</span>
+                  <span>Đang lưu...</span>
                 } @else {
                   <span>{{ langService.translate('edit.saveBtn') }}</span>
                 }
@@ -235,11 +385,12 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
                 LOT — #{{ productId }}
               </div>
 
+              <!-- Preview Ảnh Đầu Tiên -->
               <div class="relative h-48 bg-[#050b08] border border-emerald-900/40 rounded-xl overflow-hidden flex items-center justify-center">
-                @if (selectedFilePreviews().length > 0) {
+                @if (existingImages().length > 0) {
+                  <img [src]="existingImages()[0].imageUrl" class="w-full h-full object-cover" />
+                } @else if (selectedFilePreviews().length > 0) {
                   <img [src]="selectedFilePreviews()[0]" class="w-full h-full object-cover" />
-                } @else if (existingImages().length > 0) {
-                  <img [src]="existingImages()[0]" class="w-full h-full object-cover" />
                 } @else {
                   <span class="text-xs text-slate-500 font-medium">{{ langService.translate('preview.imagePlaceholder') }}</span>
                 }
@@ -291,9 +442,15 @@ export class EditProductComponent implements OnInit {
 
   productId: number = 0;
   categories = signal<Category[]>([]);
+
+  // State quản lý hình ảnh
+  existingImages = signal<ProductImageResponse[]>([]);
+  deletedImageIds = signal<number[]>([]);
   selectedFiles = signal<File[]>([]);
   selectedFilePreviews = signal<string[]>([]);
-  existingImages = signal<string[]>([]);
+
+  totalRemainingImages = computed(() => this.existingImages().length + this.selectedFiles().length);
+
   loading = signal<boolean>(true);
   submitted = signal<boolean>(false);
   submitting = signal<boolean>(false);
@@ -336,6 +493,54 @@ export class EditProductComponent implements OnInit {
     this.productId = Number(this.route.snapshot.paramMap.get('id'));
     this.loadCategories();
     this.loadProductInfo();
+
+    this.productForm.get('auctionType')?.valueChanges.subscribe((type) => {
+      this.onAuctionTypeChange(type);
+    });
+
+    this.productForm.get('buyNowPrice')?.valueChanges.subscribe((buyPrice) => {
+      if (this.productForm.get('auctionType')?.value === 'BUY_NOW' && buyPrice) {
+        this.productForm.patchValue({ startPrice: buyPrice, bidStep: 1 }, { emitEvent: false });
+      }
+    });
+  }
+
+  onAuctionTypeChange(type: string | null): void {
+    const reserveCtrl = this.productForm.get('reservePrice');
+    const buyNowCtrl = this.productForm.get('buyNowPrice');
+    const startCtrl = this.productForm.get('startPrice');
+    const stepCtrl = this.productForm.get('bidStep');
+
+    if (type === 'ENGLISH') {
+      buyNowCtrl?.clearValidators();
+      buyNowCtrl?.setValue(null);
+      reserveCtrl?.clearValidators();
+      reserveCtrl?.setValue(null);
+
+      startCtrl?.setValidators([Validators.required, Validators.min(1)]);
+      stepCtrl?.setValidators([Validators.required, Validators.min(1)]);
+    } else if (type === 'RESERVE') {
+      buyNowCtrl?.clearValidators();
+      buyNowCtrl?.setValue(null);
+
+      reserveCtrl?.setValidators([Validators.required, Validators.min(1)]);
+      startCtrl?.setValidators([Validators.required, Validators.min(1)]);
+      stepCtrl?.setValidators([Validators.required, Validators.min(1)]);
+    } else if (type === 'BUY_NOW') {
+      reserveCtrl?.clearValidators();
+      reserveCtrl?.setValue(null);
+
+      buyNowCtrl?.setValidators([Validators.required, Validators.min(1)]);
+      if (buyNowCtrl?.value) {
+        startCtrl?.setValue(buyNowCtrl.value);
+      }
+      stepCtrl?.setValue(1);
+    }
+
+    reserveCtrl?.updateValueAndValidity();
+    buyNowCtrl?.updateValueAndValidity();
+    startCtrl?.updateValueAndValidity();
+    stepCtrl?.updateValueAndValidity();
   }
 
   loadCategories(): void {
@@ -359,9 +564,11 @@ export class EditProductComponent implements OnInit {
           startTime: prod.startTime ? prod.startTime.slice(0, 16) : '',
           endTime: prod.endTime ? prod.endTime.slice(0, 16) : ''
         });
+
         if (prod.images && prod.images.length > 0) {
-          this.existingImages.set(prod.images.map((img) => img.imageUrl));
+          this.existingImages.set(prod.images);
         }
+        this.onAuctionTypeChange(prod.auctionType as string);
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
@@ -373,15 +580,55 @@ export class EditProductComponent implements OnInit {
     return !!ctrl && ctrl.invalid && (ctrl.touched || ctrl.dirty || this.submitted());
   }
 
+  /**
+   * Xóa một ảnh gốc đã tải lên trước đó
+   */
+  removeExistingImage(imageId: number): void {
+    if (this.totalRemainingImages() <= 1) {
+      this.toastService.showWarn('Không thể xóa', 'Sản phẩm phải giữ lại ít nhất 1 hình ảnh!');
+      return;
+    }
+
+    // Thêm ID vào danh sách cần gửi lên Backend để xóa
+    this.deletedImageIds.update((ids) => [...ids, imageId]);
+
+    // Loại bỏ khỏi UI hiển thị
+    this.existingImages.update((imgs) => imgs.filter((img) => img.id !== imageId));
+
+    this.toastService.showInfo('Đã chọn xóa ảnh', 'Ảnh sẽ chính thức bị xóa khi bạn bấm nút Lưu!');
+  }
+
+  /**
+   * Thêm các file ảnh mới từ máy tính
+   */
   onFileSelected(event: any): void {
     if (event.target.files && event.target.files.length > 0) {
       const files: File[] = Array.from(event.target.files);
-      this.selectedFiles.set(files);
-      const previews = files.map((file) => URL.createObjectURL(file));
-      this.selectedFilePreviews.set(previews);
+
+      if (this.totalRemainingImages() + files.length > 20) {
+        this.toastService.showError('Quá số lượng ảnh', 'Tổng số lượng ảnh không được vượt quá 20 bức!');
+        return;
+      }
+
+      this.selectedFiles.update((curr) => [...curr, ...files]);
+
+      const newPreviews = files.map((file) => URL.createObjectURL(file));
+      this.selectedFilePreviews.update((curr) => [...curr, ...newPreviews]);
     }
   }
 
+  /**
+   * Hủy chọn một file ảnh mới chọn
+   */
+  removeNewFile(index: number): void {
+    URL.revokeObjectURL(this.selectedFilePreviews()[index]);
+    this.selectedFiles.update((curr) => curr.filter((_, i) => i !== index));
+    this.selectedFilePreviews.update((curr) => curr.filter((_, i) => i !== index));
+  }
+
+  /**
+   * Gửi thông tin cập nhật bài đăng lên Backend API
+   */
   onSubmit(): void {
     this.submitted.set(true);
 
@@ -390,29 +637,50 @@ export class EditProductComponent implements OnInit {
       return;
     }
 
+    if (this.totalRemainingImages() < 1) {
+      this.toastService.showError('Thiếu hình ảnh', 'Sản phẩm phải có ít nhất 1 hình ảnh!');
+      return;
+    }
+
     const formData = new FormData();
     const val = this.productForm.value;
+    const type = val.auctionType;
 
     formData.append('categoryId', String(val.categoryId));
     formData.append('title', val.title!);
     formData.append('description', val.description!);
-    formData.append('auctionType', val.auctionType!);
-    formData.append('startPrice', String(val.startPrice));
-    formData.append('bidStep', String(val.bidStep));
+    formData.append('auctionType', type!);
     formData.append('startTime', val.startTime!);
     formData.append('endTime', val.endTime!);
 
-    if (val.buyNowPrice) formData.append('buyNowPrice', String(val.buyNowPrice));
-    if (val.reservePrice) formData.append('reservePrice', String(val.reservePrice));
+    if (type === 'ENGLISH') {
+      formData.append('startPrice', String(val.startPrice));
+      formData.append('bidStep', String(val.bidStep));
+    } else if (type === 'RESERVE') {
+      formData.append('startPrice', String(val.startPrice));
+      formData.append('bidStep', String(val.bidStep));
+      formData.append('reservePrice', String(val.reservePrice));
+    } else if (type === 'BUY_NOW') {
+      const buyPrice = val.buyNowPrice || val.startPrice || 0;
+      formData.append('startPrice', String(buyPrice));
+      formData.append('bidStep', '1');
+      formData.append('buyNowPrice', String(buyPrice));
+    }
 
+    // Gửi danh sách ID ảnh cũ cần xóa
+    this.deletedImageIds().forEach((id) => {
+      formData.append('deleteImageIds', String(id));
+    });
+
+    // Gửi danh sách file ảnh mới chọn bổ sung
     this.selectedFiles().forEach((file) => {
-      formData.append('images', file);
+      formData.append('newImages', file);
     });
 
     this.submitting.set(true);
     this.sellerService.updateProduct(this.productId, formData).subscribe({
       next: () => {
-        this.toastService.showSuccess('Cập Nhật Thành Công', 'Thông tin sản phẩm đã được lưu!');
+        this.toastService.showSuccess('Cập Nhật Thành Công', 'Thông tin và danh sách hình ảnh đã được cập nhật thành công!');
         this.submitting.set(false);
         this.router.navigate(['/seller']);
       },

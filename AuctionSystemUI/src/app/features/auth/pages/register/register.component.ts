@@ -184,8 +184,8 @@ export class RegisterComponent {
       }).subscribe({
         next: (res) => {
           this.loading.set(false);
-          this.toastService.showSuccess('Đăng ký thành công!', `Chào mừng ${res.username} đến với AuctionHub!`);
-          this.router.navigate(['/']);
+          this.toastService.showSuccess('Đăng ký thành công!', `Tài khoản ${res.username} đã được tạo thành công. Vui lòng nhập mật khẩu để đăng nhập.`);
+          this.router.navigate(['/login'], { queryParams: { registeredEmail: email } });
         },
         error: () => {
           this.loading.set(false);

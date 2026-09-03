@@ -135,6 +135,11 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+    const registeredEmail = this.route.snapshot.queryParams['registeredEmail'] || this.route.snapshot.queryParams['email'];
+    if (registeredEmail) {
+      this.loginForm.patchValue({ email: registeredEmail });
+      this.toastService.showInfo('Tài khoản mới', 'Đã tự động điền Email vừa đăng ký. Nhập Mật khẩu để đăng nhập!');
+    }
   }
 
   isFieldInvalid(fieldName: string): boolean {
