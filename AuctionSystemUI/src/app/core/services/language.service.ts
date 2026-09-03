@@ -242,6 +242,13 @@ const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     'edit.backLink': '← Quay lại danh sách',
     'edit.cancelBtn': 'Hủy thay đổi',
     'edit.saveBtn': 'Lưu thông tin cập nhật',
+    'edit.existingImagesTitle': '📸 Hình ảnh đã đăng (Ảnh gốc)',
+    'edit.existingImagesSub': 'Các hình ảnh đang có trên hệ thống. Bạn có thể xóa các ảnh cũ không dùng đến.',
+    'edit.newImagesTitle': '📸 Bổ sung hình ảnh mới',
+    'edit.newImagesSub': 'Bấm vào đây để chọn thêm hình ảnh mới từ máy tính',
+    'edit.deleteImageBtn': 'Xóa ảnh này',
+    'edit.totalImagesCount': 'Tổng số ảnh sau khi lưu:',
+    'edit.minImageWarning': 'Sản phẩm phải có ít nhất 1 hình ảnh!',
 
     // Admin Moderation
     'admin.title': '🛡️ Cổng Kiểm Duyệt Bài Đăng Admin',
@@ -486,6 +493,13 @@ const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     'edit.backLink': '← Back to listings',
     'edit.cancelBtn': 'Discard Changes',
     'edit.saveBtn': 'Save Updated Details',
+    'edit.existingImagesTitle': '📸 Currently Uploaded Images',
+    'edit.existingImagesSub': 'Images currently active on system. Click trash icon to delete images you want to remove.',
+    'edit.newImagesTitle': '📸 Add New Images',
+    'edit.newImagesSub': 'Click here to select additional image files from computer',
+    'edit.deleteImageBtn': 'Delete image',
+    'edit.totalImagesCount': 'Total images after saving:',
+    'edit.minImageWarning': 'Product must have at least 1 image!',
 
     // Admin Moderation
     'admin.title': '🛡️ Admin Moderation Portal',

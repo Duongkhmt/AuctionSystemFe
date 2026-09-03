@@ -22,8 +22,8 @@ export const apiHeaderInterceptor: HttpInterceptorFn = (req, next) => {
     'Accept-Language': currentLang
   };
 
-  // Chỉ gắn Authorization Header khi có token hợp lệ và người dùng đang ở trạng thái đã đăng nhập
-  if (token && token !== 'undefined' && token !== 'null' && authService.isLoggedIn()) {
+  // Gắn Authorization Header khi có access token hợp lệ trong localStorage
+  if (token && token !== 'undefined' && token !== 'null') {
     headersToAdd['Authorization'] = `Bearer ${token}`;
   }
 

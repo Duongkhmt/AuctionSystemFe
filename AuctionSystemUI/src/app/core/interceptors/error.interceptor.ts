@@ -1,21 +1,23 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError, switchMap } from 'rxjs';
+import { catchError, throwError, switchMap, BehaviorSubject, filter, take } from 'rxjs';
 import { ToastService } from '../services/toast.service';
 import { AuthService } from '../auth/auth.service';
 
 let isRefreshing = false;
+const refreshTokenSubject = new BehaviorSubject<string | null>(null);
 
 /**
  * ====================================================================================
- * 🛡️ ERROR INTERCEPTOR (Silent Refresh Token & Automatic Retry Integration)
+ * 🛡️ ERROR INTERCEPTOR (Silent Refresh Token & Concurrent Request Queue)
  * ====================================================================================
  * Chặn các phản hồi lỗi HTTP từ Spring Boot Backend (401, 409, 429, 400, 403...).
  * Khi gặp lỗi 401 Unauthorized (Access Token 10 phút bị hết hạn):
  * 1. Tự động gửi ngầm request POST /v1/auth/refresh kèm Refresh Token (Rotation).
- * 2. Khi nạp Access Token mới thành công ➔ Tự động Retry request bị lỗi ban đầu mà người dùng KHÔNG BỊ OUT RA KHI ĐANG ĐẤU GIÁ.
- * 3. Nếu Refresh Token cũng hết hạn (sau 3 ngày) ➔ Đăng xuất an toàn và chuyển về trang /login.
+ * 2. Nếu có nhiều HTTP Request đồng thời bị 401 ➔ Các request sau sẽ CHỜ token mới qua BehaviorSubject (KHÔNG BỊ OUT TỰ ĐỘNG).
+ * 3. Khi nạp Access Token mới thành công ➔ Tự động Retry tất cả request bị lỗi ban đầu ngầm bên dưới.
+ * 4. Nếu Refresh Token thực sự hết hạn (sau 3 ngày không sử dụng) ➔ Mới Đăng xuất an toàn và điều hướng về /login.
  */
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const toastService = inject(ToastService);
@@ -34,36 +36,55 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         const refreshToken = authService.getRefreshToken();
 
         // Nếu có Refresh Token và request bị lỗi không phải là Auth Endpoint -> Chạy Silent Refresh
-        if (refreshToken && !isAuthEndpoint && !isRefreshing) {
-          isRefreshing = true;
+        if (refreshToken && !isAuthEndpoint) {
+          if (!isRefreshing) {
+            isRefreshing = true;
+            refreshTokenSubject.next(null);
 
-          return authService.refreshToken().pipe(
-            switchMap((authRes) => {
-              isRefreshing = false;
-              // Đã có Access Token mới -> Gắn vào Bearer Header và tự động Retry lại request bị lỗi ban đầu
-              const clonedReq = req.clone({
-                setHeaders: {
-                  Authorization: `Bearer ${authRes.accessToken}`
+            return authService.refreshToken().pipe(
+              switchMap((authRes) => {
+                isRefreshing = false;
+                refreshTokenSubject.next(authRes.accessToken);
+                // Đã có Access Token mới -> Gắn vào Bearer Header và tự động Retry lại request bị lỗi ban đầu
+                const clonedReq = req.clone({
+                  setHeaders: {
+                    Authorization: `Bearer ${authRes.accessToken}`
+                  }
+                });
+                return next(clonedReq);
+              }),
+              catchError((refreshErr) => {
+                isRefreshing = false;
+                refreshTokenSubject.next(null);
+                // Nếu Refresh Token thực sự hết hạn hoặc bị hủy -> Đăng xuất và điều hướng
+                authService.logout();
+
+                const currentUrl = router.url.split('?')[0];
+                if (currentUrl.startsWith('/seller') || currentUrl.startsWith('/my-bids') || currentUrl.startsWith('/admin')) {
+                  toastService.showError('🔒 Phiên Đăng Nhập Hết Hạn', 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+                  router.navigate(['/login']);
                 }
-              });
-              return next(clonedReq);
-            }),
-            catchError((refreshErr) => {
-              isRefreshing = false;
-              // Nếu Refresh Token cũng hết hạn hoặc bị hủy -> Đăng xuất và điều hướng
-              authService.logout();
-
-              const currentUrl = router.url.split('?')[0];
-              if (currentUrl.startsWith('/seller') || currentUrl.startsWith('/my-bids') || currentUrl.startsWith('/admin')) {
-                toastService.showError('🔒 Phiên Đăng Nhập Hết Hạn', 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
-                router.navigate(['/login']);
-              }
-              return throwError(() => refreshErr);
-            })
-          );
+                return throwError(() => refreshErr);
+              })
+            );
+          } else {
+            // Hàng chờ: Khi đã có 1 request trước đó đang chạy Refresh Token -> Các request song song tiếp theo sẽ chờ token mới
+            return refreshTokenSubject.pipe(
+              filter((token) => token !== null),
+              take(1),
+              switchMap((newToken) => {
+                const clonedReq = req.clone({
+                  setHeaders: {
+                    Authorization: `Bearer ${newToken}`
+                  }
+                });
+                return next(clonedReq);
+              })
+            );
+          }
         }
 
-        // Nếu không có Refresh Token hoặc chính endpoint refresh bị 401 -> Logout
+        // Nếu thực sự không có Refresh Token hoặc chính endpoint refresh bị 401 -> Mới Logout
         authService.logout();
         const currentUrl = router.url.split('?')[0];
         if (currentUrl.startsWith('/seller') || currentUrl.startsWith('/my-bids') || currentUrl.startsWith('/admin')) {
@@ -102,7 +123,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
 
-      toastService.showError(toastTitle, errorMessage);
+        toastService.showError(toastTitle, errorMessage);
       return throwError(() => error);
     })
   );

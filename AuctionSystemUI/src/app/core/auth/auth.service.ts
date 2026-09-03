@@ -83,16 +83,19 @@ export class AuthService {
         if (camelRes.refreshToken) {
           localStorage.setItem(this.REFRESH_TOKEN_KEY, camelRes.refreshToken);
         }
-        const user = this.currentUser();
-        if (user) {
-          const updatedUser: UserSession = {
-            ...user,
-            accessToken: camelRes.accessToken,
-            refreshToken: camelRes.refreshToken
-          };
-          localStorage.setItem(this.USER_KEY, JSON.stringify(updatedUser));
-          this.currentUser.set(updatedUser);
-        }
+
+        const existingUser = this.currentUser() || this.loadStoredUser();
+        const updatedUser: UserSession = {
+          id: existingUser?.id || (camelRes.username?.toLowerCase().includes('admin') ? 1 : 4),
+          name: camelRes.username || existingUser?.name || 'User',
+          email: existingUser?.email || '',
+          role: this.normalizeRole(camelRes.role || existingUser?.role || 'USER'),
+          accessToken: camelRes.accessToken,
+          refreshToken: camelRes.refreshToken
+        };
+
+        localStorage.setItem(this.USER_KEY, JSON.stringify(updatedUser));
+        this.currentUser.set(updatedUser);
       })
     );
   }

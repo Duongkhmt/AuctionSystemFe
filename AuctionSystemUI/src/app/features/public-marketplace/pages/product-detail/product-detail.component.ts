@@ -137,7 +137,7 @@ import { AuthModalComponent } from '../../../../shared/components/auth-modal/aut
                     {{ product()!.auctionType === 'BUY_NOW' ? langService.t('product.fixedBuyNowPrice') : langService.t('product.currentBidPrice') }}
                   </p>
                   <p class="text-xl font-black text-emerald-400 font-mono">
-                    {{ (product()!.auctionType === 'BUY_NOW' && product()!.buyNowPrice ? product()!.buyNowPrice : (product()!.currentPrice || product()!.startPrice)) | currencyVnd }}
+                    {{ (product()!.auctionType === 'BUY_NOW' && product()!.buyNowPrice ? product()!.buyNowPrice : effectiveCurrentPrice()) | currencyVnd }}
                   </p>
                 </div>
 
@@ -194,6 +194,7 @@ import { AuthModalComponent } from '../../../../shared/components/auth-modal/aut
                     <input
                       type="number"
                       [(ngModel)]="bidAmount"
+                      (input)="isUserEditingBid = true"
                       [min]="minNextBid()"
                       class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm font-mono text-emerald-400 font-bold focus:outline-none focus:border-indigo-500"
                     />
@@ -290,6 +291,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   bidAmount: number = 0;
   maxAutoBidAmount?: number;
+  isUserEditingBid: boolean = false;
   nowSignal = signal<number>(Date.now());
   
   private pollTimer: any = null;
@@ -308,7 +310,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       
       this.pollTimer = setInterval(() => {
         this.loadProductDetail(id, false);
-      }, 3000);
+      }, 1500);
 
       this.clockTicker = setInterval(() => {
         this.nowSignal.set(Date.now());
@@ -335,6 +337,13 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     return false;
   }
 
+  effectiveCurrentPrice(): number {
+    if (!this.product()) return 0;
+    const pPrice = this.product()!.currentPrice || this.product()!.startPrice || 0;
+    const topBidPrice = this.bidHistory().length > 0 ? this.bidHistory()[0].bidAmount : 0;
+    return Math.max(pPrice, topBidPrice);
+  }
+
   calculateDynamicBidStep(price: number): number {
     if (price < 1000000) return 10000;
     if (price <= 10000000) return 100000;
@@ -343,28 +352,23 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   effectiveBidStep(): number {
     if (!this.product()) return 0;
-    const current = this.product()!.currentPrice || this.product()!.startPrice || 0;
+    const current = this.effectiveCurrentPrice();
     const dynamicStep = this.calculateDynamicBidStep(current);
     return Math.max(this.product()!.bidStep || 0, dynamicStep);
   }
 
   minNextBid(): number {
     if (!this.product()) return 0;
-    const current = this.product()!.currentPrice || this.product()!.startPrice || 0;
-    return current + this.effectiveBidStep();
+    return this.effectiveCurrentPrice() + this.effectiveBidStep();
   }
 
   loadProductDetail(id: number, isInitial = false): void {
     if (isInitial) this.loading.set(true);
     this.marketplaceService.getProductById(id).subscribe({
       next: (res) => {
-        const oldPrice = this.product()?.currentPrice;
         this.product.set(res);
         if (isInitial && res.images && res.images.length > 0) {
           this.activeImage.set(res.images[0].imageUrl);
-        }
-        if (isInitial || oldPrice !== res.currentPrice) {
-          this.bidAmount = this.minNextBid();
         }
         this.fetchBidHistory();
         if (isInitial) this.loading.set(false);
@@ -378,7 +382,13 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   fetchBidHistory(): void {
     if (!this.product()) return;
     this.biddingService.getBidHistory(this.product()!.auctionId).subscribe({
-      next: (res) => this.bidHistory.set(res)
+      next: (res) => {
+        this.bidHistory.set(res);
+        const minBid = this.minNextBid();
+        if (!this.isUserEditingBid && (!this.bidAmount || this.bidAmount < minBid)) {
+          this.bidAmount = minBid;
+        }
+      }
     });
   }
 
@@ -422,6 +432,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: (res) => {
         this.biddingActionLoading.set(false);
+        this.isUserEditingBid = false;
         this.toastService.showSuccess('Thành công', 'Đặt giá cạnh tranh thành công!');
         this.loadProductDetail(this.product()!.productId, false);
       },
