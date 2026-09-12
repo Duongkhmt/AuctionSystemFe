@@ -1,26 +1,7 @@
-# 📘 HƯỚNG DẪN TỔNG QUAN & PHÂN TÍCH CHI TIẾT 100% CÁC FILE/CLASS FRONTEND (ANGULAR 18) DÀNH CHO BACKEND DEVELOPER
+# TỔNG QUAN & PHÂN TÍCH CHI TIẾT 100% CÁC FILE/CLASS FRONTEND (ANGULAR 18) DÀNH CHO BACKEND DEVELOPER
 
 
 ---
-
-## 📋 MỤC LỤC
-
-1. [PHẦN 1 — BẢN ĐỒ TOÀN BỘ FRONTEND & TECH STACK](#phần-1--bản-đồ-toàn-bộ-frontend--tech-stack)
-2. [PHẦN 2 — TƯƠNG QUAN KIẾN TRÚC: BACKEND VS FRONTEND](#phần-2--tương-quan-kiến-trúc-backend-vs-frontend)
-3. [PHẦN 3 — PHÂN TÍCH CHI TIẾT THEO FOLDER (FOLDER STRUCTURE)](#phần-3--phân-tích-chi-tiết-theo-folder-folder-structure)
-4. [PHẦN 4 — KHÁI NIỆM FRONTEND (ANGULAR 18) NGHĨA LÀ GÌ NẾU SO SÁNH VỚI BACKEND?](#phần-4--khái-niệm-frontend-angular-18-nghĩa-là-gì-nếu-so-sánh-với-backend)
-5. [PHẦN 5 — PHÂN TÍCH ROUTING (ĐIỀU HƯỚNG VÀ ROUTE GUARDS)](#phần-5--phân-tích-routing-điều-hướng-và-route-guards)
-6. [PHẦN 6 — LUỒNG XỬ LÝ API (API FLOW & HTTP INTERCEPTORS)](#phần-6--luồng-xử-lý-api-api-flow--http-interceptors)
-7. [PHẦN 7 — AUTHENTICATION & AUTHORIZATION](#phần-7--authentication--authorization)
-8. [PHẦN 8 — STATE MANAGEMENT & GIẢI MÃ SIGNALS](#phần-8--state-management--giải-mã-signals)
-9. [PHẦN 9 — CÁC FILE & COMPONENT QUAN TRỌNG NHẤT (CODE WALKTHROUGH)](#phần-9--các-file--component-quan-trong-nhất-code-walkthrough)
-10. [PHẦN 10 — TRACE THE CODE: HƯỚNG DẪN LUỒNG CHẠY NHAU THEO CÁC NGHIỆP VỤ THỰC TẾ](#phần-10--trace-the-code-hướng-dẫn-luồng-chạy-nhau-theo-các-nghiệp-vụ-thực-tế)
-11. [PHẦN 11 — QUẢN LÝ FORM, VALIDATION, LOADING & ERROR HANDLING](#phần-11--quản-lý-form-validation-loading--error-handling)
-12. [PHẦN 12 — TỔ CHỨC STYLING & DEPENDENCY MANAGEMENT](#phần-12--tổ-chức-styling--dependency-management)
-13. [PHẦN 13 — CÁC DESIGN PATTERNS ĐANG ĐƯỢC ÁP DỤNG](#phần-13--các-design-patterns-đang-được-áp-dụng)
-14. [PHẦN 14 — HƯỚNG DẪN TỰ SỬA CODE / THÊM TÍNH NĂNG MỚI (CHECKLIST)](#phần-14--hướng-dẫn-tự-sửa-code--thêm-tính-năng-mới-checklist)
-15. [PHẦN 15 — ROADMAP HỌC FRONTEND CHO BACKEND DEVELOPER](#phần-15--roadmap-học-frontend-cho-backend-developer)
-16. [PHẦN 16 — PHÂN TÍCH TỪNG FILE / CLASS / COMPONENT CHI TIẾT 100%](#phần-16--phân-tích-từng-file--class--component-chi-tiết-100)
 
 ---
 
@@ -87,7 +68,8 @@ AuctionSystemUI/
 │       │       └── case-converter.util.ts     # Chuyển đổi snake_case ↔ camelCase
 │       │
 │       ├── shared/                # [LAYER 2] Thành phần tái sử dụng giữa các Feature
-│       │   ├── components/        # UI Component chung (Modal, Status Badge, Toast)
+│       │   ├── components/        # UI Component chung (Modal, Auth Modal, Status Badge, Toast)
+│       │   │   ├── auth-modal/                # Modal Đăng nhập / Đăng ký nhanh khi đang thầu
 │       │   │   ├── product-detail-modal/
 │       │   │   ├── status-badge/
 │       │   │   └── toast-container/
@@ -99,6 +81,7 @@ AuctionSystemUI/
 │       │   └── pipes/             # Hàm biến đổi hiển thị trên Template (Format currency, Time,...)
 │       │       ├── auction-status-badge.pipe.ts
 │       │       ├── currency-format.pipe.ts
+│       │       ├── currency-vnd.pipe.ts
 │       │       └── time-remaining.pipe.ts
 │       │
 │       ├── layout/                # [LAYER 3] Các bộ khung giao diện chính (Master Layouts)
@@ -111,9 +94,11 @@ AuctionSystemUI/
 │           │   ├── admin.routes.ts
 │           │   ├── pages/pending-approval/
 │           │   └── services/admin-api.service.ts
-│           ├── auth/              # Đăng nhập & Chuyển đổi Tài khoản Test
+│           ├── auth/              # Đăng nhập, Đăng ký & JWT Session
 │           │   ├── auth.routes.ts
-│           │   └── pages/login/
+│           │   └── pages/
+│           │       ├── login/                 # Màn hình Đăng nhập (Auto-fill email từ Đăng ký)
+│           │       └── register/              # Màn hình Đăng ký (Chuyển sang Login khi xong)
 │           ├── bidder-portal/     # Trang dành cho Người đấu giá (Đơn thắng cuộc, Đã đặt giá)
 │           │   ├── bidder-portal.routes.ts
 │           │   ├── components/checkout-modal/
@@ -287,11 +272,12 @@ Cấu hình routing hệ thống nằm tại file `src/app/app.routes.ts`:
 
 | URL Path | Master Layout | Feature Route File | Authorization Guard | Ý Nghĩa / Trang Render |
 | :--- | :--- | :--- | :--- | :--- |
-| `/auth/login` | None | `auth.routes.ts` | Public | Màn hình đăng nhập & chọn tài khoản test |
+| `/login` | None | `auth.routes.ts` | Public | Màn hình Đăng nhập (Auto-fill Email từ Đăng ký) |
+| `/register` | None | `auth.routes.ts` | Public | Màn hình Đăng ký tài khoản thành viên mới |
 | `/` | `MainLayoutComponent` | `public-marketplace.routes.ts` | Public | Trang chủ sàn đấu giá (Hiển thị tất cả sản phẩm) |
-| `/product/:id` | `MainLayoutComponent` | `public-marketplace.routes.ts` | Public | Trang chi tiết sản phẩm & Đặt giá |
-| `/my-bids` | `MainLayoutComponent` | `bidder-portal.routes.ts` | Public | Trang lịch sử đấu giá & Đơn thắng cuộc của tôi |
-| `/seller/...` | `SellerLayoutComponent` | `seller.routes.ts` | `roleGuard(['USER', 'ADMIN'])` | Quản lý sản phẩm, Tạo bài đăng, Đơn bán |
+| `/product/:id` | `MainLayoutComponent` | `public-marketplace.routes.ts` | Public | Trang chi tiết sản phẩm & Đặt giá tự do |
+| `/my-bids` | `MainLayoutComponent` | `bidder-portal.routes.ts` | `authGuard` | Trang lịch sử đấu giá & Đơn thắng cuộc của tôi |
+| `/seller/...` | `SellerLayoutComponent` | `seller.routes.ts` | `roleGuard(['USER', 'ADMIN'])` | Quản lý sản phẩm, Tạo bài đăng động, Đơn bán |
 | `/admin/...` | `AdminLayoutComponent` | `admin.routes.ts` | `roleGuard(['ADMIN'])` | Trang duyệt bài dành cho Admin |
 | `**` (Wildcard) | None | Redirect về `/` | Public | Tự động chuyển hướng nếu gõ sai URL |
 
@@ -353,6 +339,7 @@ Trong Angular 18, các Interceptor được đăng ký tại `app.config.ts` và
 
 3. **[errorInterceptor](file:///home/duong/Projects/Frontend/AuctionSystemUI/src/app/core/interceptors/error.interceptor.ts)**:
    - **Nhiệm vụ**: Bắt lỗi HTTP Status (400, 401, 403, 404, 500) trả về từ Backend. Bóc tách thông điệp lỗi (Error Message) từ JSON Backend và phát hiệu lệnh hiển thị Toast thông báo màu đỏ cho người dùng.
+   - **Xử lý Silent Refresh Token (401)**: Khi nhận lỗi 401 Unauthorized do token hết hạn, Interceptor tự động gọi API `POST /v1/auth/refresh` ngầm để lấy Access Token mới và tiếp tục thực hiện lại Request của người dùng mà không bị ngắt quãng phiên làm việc.
 
 ---
 
@@ -848,8 +835,12 @@ Dưới đây là bảng phân tích toàn bộ **54 file TypeScript** trong cod
 #### 37. `src/app/features/public-marketplace/pages/product-detail/product-detail.component.ts`
 * **Component**: `ProductDetailComponent`
 * **Input**: `@Input() id!: string` (Nhận từ URL `/product/:id`).
-* **State**: `product = signal<ProductResponse | null>(null)`, `bidHistory = signal<BidHistoryResponse[]>([])`.
-* **Functions**: `placeBid()`, `buyNow()`, `loadBidHistory()`.
+* **State**: `product = signal<ProductResponse | null>(null)`, `bidHistory = signal<BidHistoryResponse[]>([])`, `isUserEditingBid: boolean`.
+* **Nghiệp vụ nổi bật**:
+  - Polling Realtime `1500ms` kéo giá mới liên tục.
+  - Cờ `isUserEditingBid` bảo vệ ô gõ phím không bị đợt Polling ngầm ghi đè khi người dùng đang gõ giá đặt tự do (`4.000.000.000 đ`, `5.000.000.000 đ`).
+  - Hàm `effectiveCurrentPrice()` tính giá cao nhất chính xác giữa `currentPrice` và lịch sử đấu giá `highestBid`.
+* **Functions**: `handleBidAction()`, `submitBid()`, `submitBuyNow()`, `fetchBidHistory()`.
 
 ---
 
@@ -903,11 +894,19 @@ Dưới đây là bảng phân tích toàn bộ **54 file TypeScript** trong cod
 
 #### 48. `src/app/features/seller-studio/pages/create-product/create-product.component.ts`
 * **Component**: `CreateProductComponent`
-* **Form**: Form upload ảnh & tạo thông tin bài đấu giá.
+* **Form & Cấu hình Động**:
+  - Tự động ẩn/hiện trường theo `auctionType`:
+    - `ENGLISH`: Hiện **Giá khởi điểm** & **Bước giá**. Ẩn Giá mua ngay & Giá bảo lưu (giá ẩn).
+    - `RESERVE`: Hiện **Giá khởi điểm**, **Bước giá**, **Giá Bảo Lưu** (Bắt buộc $\ge$ Giá khởi điểm). Ẩn Giá mua ngay.
+    - `BUY_NOW`: Hiện **Giá Mua Ngay Niêm Yết** (Bắt buộc). Ẩn Bước giá & Giá bảo lưu. Tự đồng bộ `startPrice = buyNowPrice`.
+  - Hỗ trợ tải lên danh sách ảnh sản phẩm (1 - 20 ảnh).
 
 #### 49. `src/app/features/seller-studio/pages/edit-product/edit-product.component.ts`
 * **Component**: `EditProductComponent`
 * **Input**: `@Input() id!: string` (Lấy ID sản phẩm từ URL).
+* **Nghiệp vụ**:
+  - Áp dụng Cấu hình Form Đấu giá Động theo `auctionType` tương tự trang Tạo mới.
+  - Quản lý danh sách hình ảnh: Hỗ trợ chọn xóa ảnh cũ (`deletedImageIds`) và bổ sung ảnh mới (`newImages`).
 
 ---
 
@@ -925,11 +924,15 @@ Dưới đây là bảng phân tích toàn bộ **54 file TypeScript** trong cod
 * **Functions**: `approve(id)`, `openRejectModal(id)`, `confirmReject()`.
 
 #### 53. `src/app/features/auth/auth.routes.ts`
-* **Routes**: `/auth/login` (LoginComponent).
+* **Routes**: `/login` (LoginComponent), `/register` (RegisterComponent).
 
 #### 54. `src/app/features/auth/pages/login/login.component.ts`
 * **Component**: `LoginComponent`
-* **Vai trò**: Màn hình đăng nhập và bảng chọn nhanh tài khoản thử nghiệm.
+* **Vai trò**: Màn hình đăng nhập tài khoản chính thức bằng JWT. Tự động kiểm tra `registeredEmail` từ queryParam (chuyển sang từ trang Đăng ký) và patchValue tự điền sẵn Email.
+
+#### 55. `src/app/features/auth/pages/register/register.component.ts`
+* **Component**: `RegisterComponent`
+* **Vai trò**: Màn hình Đăng ký tài khoản thành viên mới (Validate username, email, password & confirmPassword). Khi đăng ký thành công, hiển thị Toast và tự động chuyển sang `/login?registeredEmail=...`.
 
 ---
 

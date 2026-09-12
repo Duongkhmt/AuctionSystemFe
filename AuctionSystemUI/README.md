@@ -46,7 +46,7 @@ Hệ thống cung cấp trải nghiệm giao diện đẳng cấp, trực quan h
 - **Node.js:** 18.19.0 trở lên (Khuyến nghị LTS 20+)
 - **Package Manager:** npm 10+
 - **Angular CLI:** 18.2.0 trở lên (`npm install -g @angular/cli`)
-- **Backend Service:** Spring Boot Backend (`DuAnTrainning`) đang khởi chạy tại `http://localhost:8080`
+- **Backend Service:** Spring Boot Backend (`auction-service`) đang khởi chạy tại `http://localhost:8080`
 
 ---
 
