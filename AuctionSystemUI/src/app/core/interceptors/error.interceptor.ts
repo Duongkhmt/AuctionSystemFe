@@ -123,7 +123,13 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
 
+      // 3. Không bắn Toast báo lỗi màn hình đỏ đối với các request kiểm tra ngầm hoặc 404 sản phẩm
+      const isSilentCheck = (req.url.includes('/v1/wallets/me') && (error.status === 0 || error.status === 404))
+        || (req.url.includes('/v1/products/') && error.status === 404);
+      if (!isSilentCheck) {
         toastService.showError(toastTitle, errorMessage);
+      }
+
       return throwError(() => error);
     })
   );

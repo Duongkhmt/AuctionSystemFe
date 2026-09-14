@@ -30,20 +30,35 @@ export class ToastService {
   showSuccess(summary: string, detail: string = ''): void {
     this.addToast('success', summary, detail);
   }
+  success(summary: string, detail: string = ''): void {
+    this.showSuccess(summary, detail);
+  }
 
   /** Hiển thị thông báo Thất Bại / Lỗi (Màu đỏ) */
   showError(summary: string, detail: string = ''): void {
     this.addToast('error', summary, detail);
+  }
+  error(summary: string, detail: string = ''): void {
+    this.showError(summary, detail);
   }
 
   /** Hiển thị thông báo Thông Tin (Màu xanh dương) */
   showInfo(summary: string, detail: string = ''): void {
     this.addToast('info', summary, detail);
   }
+  info(summary: string, detail: string = ''): void {
+    this.showInfo(summary, detail);
+  }
 
   /** Hiển thị thông báo Cảnh Báo (Màu vàng) */
   showWarn(summary: string, detail: string = ''): void {
     this.addToast('warn', summary, detail);
+  }
+  warn(summary: string, detail: string = ''): void {
+    this.showWarn(summary, detail);
+  }
+  warning(summary: string, detail: string = ''): void {
+    this.showWarn(summary, detail);
   }
 
   /** Xóa một Toast theo ID */
