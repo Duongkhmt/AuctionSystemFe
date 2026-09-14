@@ -223,7 +223,7 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
                     <div class="p-5 space-y-3">
                       <div class="flex items-center justify-between text-[11px] text-slate-500">
                         <span>Mã SP: #{{ item.productId }}</span>
-                        <span>Tạo lúc: {{ item.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                        <span>Tạo lúc: {{ item.createdAt | date:'dd/MM/yyyy HH:mm':'+0700' }}</span>
                       </div>
 
                       <h3 class="font-serif font-bold text-base text-white line-clamp-1">

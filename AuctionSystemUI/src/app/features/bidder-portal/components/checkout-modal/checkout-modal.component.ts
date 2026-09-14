@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, signal, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -56,7 +56,7 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
             </div>
           </div>
 
-          <!-- Các Trường Form Có Validation Trực Quan -->
+          <!-- Các Trường Form Có Validation Trực Quan Ngay Tại Ô Nhập -->
           <div class="space-y-4">
             <!-- Trường 1: Địa Chỉ Giao Hàng Chi Tiết -->
             <div class="space-y-1">
@@ -65,6 +65,7 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
               </label>
               <textarea
                 [(ngModel)]="shippingAddress"
+                (ngModelChange)="onAddressInput()"
                 (blur)="addressTouched.set(true)"
                 rows="2"
                 placeholder="Nhập số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..."
@@ -79,7 +80,7 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
               }
             </div>
 
-            <!-- Trường 2: Số Điện Thoại Nhận Hàng -->
+            <!-- Trường 2: Số Điện Thoại Nhận Hàng (Validate Định Dạng SĐT Việt Nam) -->
             <div class="space-y-1">
               <label class="block text-xs font-semibold text-slate-300">
                 Số Điện Thoại Nhận Hàng <span class="text-rose-400">*</span>
@@ -87,15 +88,16 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
               <input
                 type="text"
                 [(ngModel)]="phoneNumber"
+                (ngModelChange)="onPhoneInput()"
                 (blur)="phoneTouched.set(true)"
-                placeholder="Ví dụ: 0901234567"
+                placeholder="Ví dụ: 0901234567 hoặc 0381234567"
                 [ngClass]="isPhoneInvalid() ? 'border-rose-500/80 bg-rose-950/20 text-rose-100 placeholder-rose-400/50 focus:border-rose-400' : 'border-slate-800 bg-slate-950 text-white focus:border-amber-500'"
                 class="w-full px-4 py-2.5 border rounded-xl text-xs font-mono focus:outline-none transition-all"
               />
 
               @if (isPhoneInvalid()) {
                 <p class="text-[11px] font-semibold text-rose-400 flex items-center gap-1.5 mt-1 animate-fade-in">
-                  <span>⚠️ Vui lòng nhập số điện thoại người nhận hàng hợp lệ</span>
+                  <span>{{ phoneErrorMsg() }}</span>
                 </p>
               }
             </div>
@@ -164,10 +166,6 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
                         + Nạp ngay
                       </button>
                     </div>
-                  } @else {
-                    <p class="text-[11px] text-amber-400/90 flex items-center gap-1">
-                      🔒 Tiền sẽ được khóa giữ an toàn Escrow cho đến khi bạn bấm "Đã nhận hàng".
-                    </p>
                   }
                 </div>
               }
@@ -195,7 +193,7 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
                 type="button"
                 (click)="submitCheckout()"
                 [disabled]="submitting() || (paymentMethod === 'WALLET' && (walletInfo()?.availableBalance || 0) < order.winningPrice)"
-                class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-900/30 transition-all flex items-center gap-2"
+                class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-900/30 transition-all flex items-center gap-2 cursor-pointer"
               >
                 @if (submitting()) {
                   <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -232,6 +230,7 @@ export class CheckoutModalComponent implements OnInit {
   addressTouched = signal<boolean>(false);
   phoneTouched = signal<boolean>(false);
   submitting = signal<boolean>(false);
+  serverError = signal<string>('');
 
   ngOnInit(): void {
     this.walletService.getWallet().subscribe({
@@ -245,30 +244,51 @@ export class CheckoutModalComponent implements OnInit {
     this.router.navigate(['/wallet']);
   }
 
+  onAddressInput(): void {
+    this.serverError.set('');
+  }
+
+  onPhoneInput(): void {
+    this.serverError.set('');
+  }
+
   isAddressInvalid(): boolean {
     return (this.submitted() || this.addressTouched()) && !this.shippingAddress.trim();
   }
 
-  isPhoneInvalid(): boolean {
-    return (this.submitted() || this.phoneTouched()) && !this.phoneNumber.trim();
-  }
+  phoneErrorMsg = computed(() => {
+    const val = this.phoneNumber.trim();
+    if (!val) {
+      return '⚠️ Vui lòng nhập số điện thoại người nhận hàng';
+    }
+    const vnPhoneRegex = /^(0[35789])[0-9]{8}$/;
+    if (!vnPhoneRegex.test(val)) {
+      return '⚠️ Số điện thoại không đúng định dạng VN (Gồm 10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09)';
+    }
+    return '';
+  });
+
+  isPhoneInvalid = computed(() => {
+    return (this.submitted() || this.phoneTouched()) && !!this.phoneErrorMsg();
+  });
 
   submitCheckout(): void {
     if (!this.order) return;
     this.submitted.set(true);
+    this.serverError.set('');
 
     const addr = this.shippingAddress.trim();
     const phone = this.phoneNumber.trim();
 
-    if (!addr || !phone) {
-      this.toastService.showError('Thông tin chưa hợp lệ', 'Vui lòng kiểm tra các ô màu đỏ và nhập đầy đủ thông tin giao hàng!');
+    if (!addr || !!this.phoneErrorMsg()) {
+      this.serverError.set('Vui lòng kiểm tra thông tin bị báo đỏ và sửa lại cho đúng định dạng!');
       return;
     }
 
     if (this.paymentMethod === 'WALLET') {
       const avail = this.walletInfo()?.availableBalance || 0;
       if (avail < this.order.winningPrice) {
-        this.toastService.showError('Số dư không đủ', 'Số dư ví ảo khả dụng không đủ để thanh toán. Vui lòng nạp thêm!');
+        this.serverError.set('Số dư ví ảo khả dụng không đủ để thanh toán. Vui lòng nạp thêm tiền!');
         return;
       }
     }
@@ -290,9 +310,8 @@ export class CheckoutModalComponent implements OnInit {
         this.submitting.set(false);
         console.error('Error during checkout:', err);
         const apiMsg = err.error?.message || err.error?.detail || err.message || 'Thanh toán thất bại!';
-        this.toastService.showError('Thanh toán thất bại', apiMsg);
+        this.serverError.set(apiMsg);
       }
     });
   }
 }
-
