@@ -270,15 +270,17 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
                       </button>
                     } @else if (item.status === 'UNPAID') {
                       <div class="p-3 bg-[#050b08] rounded-xl border border-emerald-900/40 text-center text-xs text-amber-400/80 font-semibold flex items-center justify-center gap-2">
-                        <span>⏳</span> Chờ người mua thanh toán tiền trước...
+                        <span>⏳</span> Chờ người mua thanh toán tiền giữ Escrow...
                       </div>
                     } @else if (item.status === 'SHIPPING') {
-                      <div class="p-3 bg-[#050b08] rounded-xl border border-emerald-900/40 text-center text-xs text-indigo-400 font-semibold flex items-center justify-center gap-2">
-                        <span>🚚</span> Đơn hàng đang được bưu cục giao tới người mua...
+                      <div class="p-3 bg-[#050b08] rounded-xl border border-emerald-900/40 text-center text-xs text-indigo-300 font-semibold flex flex-col items-center justify-center gap-1">
+                        <span>🚚 Đang giao hàng</span>
+                        <span class="text-[10px] text-slate-400 font-normal">Tiền Escrow sẽ giải ngân ngay khi người mua bấm "Xác nhận nhận hàng"</span>
                       </div>
                     } @else if (item.status === 'COMPLETED') {
-                      <div class="p-3 bg-[#050b08] rounded-xl border border-emerald-900/40 text-center text-xs text-emerald-400 font-semibold flex items-center justify-center gap-2">
-                        <span>🎉</span> Đã hoàn tất & giải ngân tiền về ví Seller!
+                      <div class="p-3 bg-emerald-950/40 rounded-xl border border-emerald-500/30 text-center text-xs text-emerald-400 font-semibold flex flex-col items-center justify-center gap-1">
+                        <span>🎉 Đơn hàng đã hoàn tất!</span>
+                        <span class="text-[10px] text-emerald-300/90 font-normal">Tiền Escrow đã tự động giải ngân về Ví Ảo Seller của bạn.</span>
                       </div>
                     }
                   </div>

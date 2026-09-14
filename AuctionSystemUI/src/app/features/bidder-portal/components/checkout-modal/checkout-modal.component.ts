@@ -1,15 +1,18 @@
-import { Component, Input, Output, EventEmitter, inject, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { OrderService } from '../../../../core/services/order.service';
+import { WalletService } from '../../../../core/services/wallet.service';
 import { UserSessionService } from '../../../../core/auth/user-session.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { WonAuctionResponse, CheckoutResponse, PaymentMethod } from '../../../../shared/models/order.model';
+import { WalletResponse } from '../../../../shared/models/wallet.model';
 import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
 
 /**
  * ====================================================================================
- * 💳 CHECKOUT MODAL COMPONENT (Popup Thanh Toán Đơn Hàng Phía Người Mua)
+ * 💳 CHECKOUT MODAL COMPONENT (Popup Thanh Toán Đơn Hàng Phía Người Mua bằng Ví Escrow)
  * ====================================================================================
  */
 @Component({
@@ -19,16 +22,16 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
   template: `
     @if (order) {
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6 relative overflow-hidden">
+        <div class="bg-slate-900 border border-amber-500/30 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6 relative overflow-hidden text-slate-100">
           
-          <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <!-- Header Popup -->
           <div class="flex items-center justify-between border-b border-slate-800 pb-4">
             <div class="flex items-center gap-2.5">
-              <span class="text-xl">💳</span>
+              <span class="text-xl p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">💳</span>
               <div>
-                <h2 class="text-lg font-black text-white">Thanh Toán Đơn Hàng Trúng Thầu</h2>
+                <h2 class="text-lg font-black text-white">Thanh Toán Đơn Hàng Escrow</h2>
                 <p class="text-xs text-slate-400">Mã Đơn Hàng: #ORD-{{ order.orderId }}</p>
               </div>
             </div>
@@ -65,13 +68,13 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
                 (blur)="addressTouched.set(true)"
                 rows="2"
                 placeholder="Nhập số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..."
-                [ngClass]="isAddressInvalid() ? 'border-rose-500/80 bg-rose-950/20 text-rose-100 placeholder-rose-400/50 focus:border-rose-400' : 'border-slate-800 bg-slate-950 text-white focus:border-indigo-500'"
+                [ngClass]="isAddressInvalid() ? 'border-rose-500/80 bg-rose-950/20 text-rose-100 placeholder-rose-400/50 focus:border-rose-400' : 'border-slate-800 bg-slate-950 text-white focus:border-amber-500'"
                 class="w-full px-4 py-2.5 border rounded-xl text-xs focus:outline-none leading-relaxed transition-all"
               ></textarea>
 
               @if (isAddressInvalid()) {
                 <p class="text-[11px] font-semibold text-rose-400 flex items-center gap-1.5 mt-1 animate-fade-in">
-                  <span>⚠️ Vui lòng nhập địa chỉ giao hàng chi tiết (số nhà, tên đường, quận/huyện...)</span>
+                  <span>⚠️ Vui lòng nhập địa chỉ giao hàng chi tiết</span>
                 </p>
               }
             </div>
@@ -86,7 +89,7 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
                 [(ngModel)]="phoneNumber"
                 (blur)="phoneTouched.set(true)"
                 placeholder="Ví dụ: 0901234567"
-                [ngClass]="isPhoneInvalid() ? 'border-rose-500/80 bg-rose-950/20 text-rose-100 placeholder-rose-400/50 focus:border-rose-400' : 'border-slate-800 bg-slate-950 text-white focus:border-indigo-500'"
+                [ngClass]="isPhoneInvalid() ? 'border-rose-500/80 bg-rose-950/20 text-rose-100 placeholder-rose-400/50 focus:border-rose-400' : 'border-slate-800 bg-slate-950 text-white focus:border-amber-500'"
                 class="w-full px-4 py-2.5 border rounded-xl text-xs font-mono focus:outline-none transition-all"
               />
 
@@ -106,37 +109,68 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
               <div class="grid grid-cols-3 gap-3">
                 <button
                   type="button"
-                  (click)="paymentMethod = 'VNPAY'"
-                  [ngClass]="paymentMethod === 'VNPAY' ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800 bg-slate-950'"
-                  class="p-3 border rounded-xl text-left transition-all hover:border-slate-700"
+                  (click)="paymentMethod = 'WALLET'"
+                  [ngClass]="paymentMethod === 'WALLET' ? 'border-amber-500 bg-amber-500/10' : 'border-slate-800 bg-slate-950'"
+                  class="p-3 border rounded-xl text-left transition-all hover:border-amber-500/50"
                 >
-                  <div class="text-lg mb-1">🏦</div>
-                  <p class="text-xs font-bold text-white">VNPAY</p>
-                  <p class="text-[10px] text-slate-400">QR / Ngân hàng</p>
+                  <div class="text-lg mb-1">👛</div>
+                  <p class="text-xs font-bold text-amber-300">Ví Ảo Đấu Giá</p>
+                  <p class="text-[10px] text-slate-400">Escrow Bảo Đảm</p>
                 </button>
 
                 <button
                   type="button"
-                  (click)="paymentMethod = 'WALLET'"
-                  [ngClass]="paymentMethod === 'WALLET' ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800 bg-slate-950'"
+                  (click)="paymentMethod = 'VNPAY'"
+                  [ngClass]="paymentMethod === 'VNPAY' ? 'border-amber-500 bg-amber-500/10' : 'border-slate-800 bg-slate-950'"
                   class="p-3 border rounded-xl text-left transition-all hover:border-slate-700"
                 >
-                  <div class="text-lg mb-1">👛</div>
-                  <p class="text-xs font-bold text-white">Ví ĐT</p>
-                  <p class="text-[10px] text-slate-400">Số dư tài khoản</p>
+                  <div class="text-lg mb-1">🏦</div>
+                  <p class="text-xs font-bold text-white">VNPAY QR</p>
+                  <p class="text-[10px] text-slate-400">Ngân hàng 24/7</p>
                 </button>
 
                 <button
                   type="button"
                   (click)="paymentMethod = 'BANK_TRANSFER'"
-                  [ngClass]="paymentMethod === 'BANK_TRANSFER' ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800 bg-slate-950'"
+                  [ngClass]="paymentMethod === 'BANK_TRANSFER' ? 'border-amber-500 bg-amber-500/10' : 'border-slate-800 bg-slate-950'"
                   class="p-3 border rounded-xl text-left transition-all hover:border-slate-700"
                 >
                   <div class="text-lg mb-1">🏧</div>
                   <p class="text-xs font-bold text-white">Chuyển Khoản</p>
-                  <p class="text-[10px] text-slate-400">ATM 24/7</p>
+                  <p class="text-[10px] text-slate-400">ATM Nội địa</p>
                 </button>
               </div>
+
+              <!-- Live Wallet Balance Card inside Modal -->
+              @if (paymentMethod === 'WALLET') {
+                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-400">Số dư ví khả dụng:</span>
+                    <span class="font-mono font-bold text-emerald-400">
+                      {{ (walletInfo()?.availableBalance || 0) | currencyVnd }}
+                    </span>
+                  </div>
+
+                  @if ((walletInfo()?.availableBalance || 0) < order.winningPrice) {
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs">
+                      <span class="text-rose-400 flex items-center gap-1 font-semibold">
+                        ⚠️ Số dư không đủ để thanh toán đơn hàng này!
+                      </span>
+                      <button
+                        type="button"
+                        (click)="navigateToWallet()"
+                        class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition-all"
+                      >
+                        + Nạp ngay
+                      </button>
+                    </div>
+                  } @else {
+                    <p class="text-[11px] text-amber-400/90 flex items-center gap-1">
+                      🔒 Tiền sẽ được khóa giữ an toàn Escrow cho đến khi bạn bấm "Đã nhận hàng".
+                    </p>
+                  }
+                </div>
+              }
             </div>
           </div>
 
@@ -160,8 +194,8 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
               <button
                 type="button"
                 (click)="submitCheckout()"
-                [disabled]="submitting()"
-                class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2"
+                [disabled]="submitting() || (paymentMethod === 'WALLET' && (walletInfo()?.availableBalance || 0) < order.winningPrice)"
+                class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-900/30 transition-all flex items-center gap-2"
               >
                 @if (submitting()) {
                   <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -178,23 +212,38 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
     }
   `
 })
-export class CheckoutModalComponent {
+export class CheckoutModalComponent implements OnInit {
   @Input() order: WonAuctionResponse | null = null;
   @Output() close = new EventEmitter<void>();
   @Output() checkoutSuccess = new EventEmitter<CheckoutResponse>();
 
   private orderService = inject(OrderService);
+  private walletService = inject(WalletService);
   private userSession = inject(UserSessionService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
 
   shippingAddress = '';
   phoneNumber = '';
-  paymentMethod: PaymentMethod = 'VNPAY';
+  paymentMethod: PaymentMethod = 'WALLET';
 
+  walletInfo = signal<WalletResponse | null>(null);
   submitted = signal<boolean>(false);
   addressTouched = signal<boolean>(false);
   phoneTouched = signal<boolean>(false);
   submitting = signal<boolean>(false);
+
+  ngOnInit(): void {
+    this.walletService.getWallet().subscribe({
+      next: (res) => this.walletInfo.set(res),
+      error: () => {}
+    });
+  }
+
+  navigateToWallet(): void {
+    this.close.emit();
+    this.router.navigate(['/wallet']);
+  }
 
   isAddressInvalid(): boolean {
     return (this.submitted() || this.addressTouched()) && !this.shippingAddress.trim();
@@ -214,6 +263,14 @@ export class CheckoutModalComponent {
     if (!addr || !phone) {
       this.toastService.showError('Thông tin chưa hợp lệ', 'Vui lòng kiểm tra các ô màu đỏ và nhập đầy đủ thông tin giao hàng!');
       return;
+    }
+
+    if (this.paymentMethod === 'WALLET') {
+      const avail = this.walletInfo()?.availableBalance || 0;
+      if (avail < this.order.winningPrice) {
+        this.toastService.showError('Số dư không đủ', 'Số dư ví ảo khả dụng không đủ để thanh toán. Vui lòng nạp thêm!');
+        return;
+      }
     }
 
     this.submitting.set(true);
@@ -238,3 +295,4 @@ export class CheckoutModalComponent {
     });
   }
 }
+
