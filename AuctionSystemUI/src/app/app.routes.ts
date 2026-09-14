@@ -30,6 +30,11 @@ export const routes: Routes = [
         path: 'seller',
         canActivate: [authGuard, roleGuard(['USER', 'ADMIN'])],
         loadChildren: () => import('./features/seller-studio/seller.routes').then((m) => m.SELLER_ROUTES)
+      },
+      {
+        path: 'wallet',
+        canActivate: [authGuard, roleGuard(['USER', 'ADMIN'])],
+        loadChildren: () => import('./features/wallet-portal/wallet.routes').then((m) => m.WALLET_ROUTES)
       }
     ]
   },
