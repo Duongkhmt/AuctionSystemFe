@@ -26,8 +26,12 @@ export const roleGuard = (allowedRoles: UserRole[]): CanActivateFn => {
       return true;
     }
 
-    // Nếu trái phép -> Tự động đá về Trang chủ Public
-    router.navigate(['/']);
+    // Nếu trái phép -> Tự động đá về Trang chủ Admin (nếu là Admin) hoặc Public
+    if (permissionService.hasRole('ADMIN')) {
+      router.navigate(['/admin']);
+    } else {
+      router.navigate(['/']);
+    }
     return false;
   };
 };

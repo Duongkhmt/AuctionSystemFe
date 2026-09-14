@@ -47,6 +47,14 @@ import { LanguageService } from '../../core/services/language.service';
             </a>
 
             <a
+              routerLink="/admin/finance"
+              routerLinkActive="bg-[#07120d] text-[#c5a059] border-l-2 border-[#c5a059]"
+              class="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-slate-300 hover:bg-[#07120d] hover:text-[#c5a059] transition-all"
+            >
+              <span>🔒 Két Escrow & Dòng Tiền</span>
+            </a>
+
+            <a
               routerLink="/admin/categories"
               routerLinkActive="bg-[#07120d] text-[#c5a059] border-l-2 border-[#c5a059]"
               class="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-slate-400 hover:bg-[#07120d] hover:text-slate-200 transition-all"
@@ -60,14 +68,6 @@ import { LanguageService } from '../../core/services/language.service';
               class="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-slate-400 hover:bg-[#07120d] hover:text-slate-200 transition-all"
             >
               <span>Người dùng</span>
-            </a>
-
-            <a
-              routerLink="/wallet"
-              routerLinkActive="bg-[#07120d] text-[#c5a059] border-l-2 border-[#c5a059]"
-              class="flex items-center gap-2.5 px-3.5 py-3 rounded-xl text-slate-400 hover:bg-[#07120d] hover:text-[#c5a059] transition-all border-t border-emerald-950/80 pt-3 mt-2"
-            >
-              <span>👛 Quản lý Ví Ảo</span>
             </a>
           </nav>
         </div>

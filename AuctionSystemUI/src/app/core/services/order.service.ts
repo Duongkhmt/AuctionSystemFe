@@ -68,4 +68,15 @@ export class OrderService {
       map((res) => snakeToCamelKeys<SellerOrderResponse>(res))
     );
   }
+
+  // 6. Admin: Truy vấn danh sách toàn bộ đơn hàng hệ thống để quản lý Két Escrow Sàn (REST /v1/admin/products/orders)
+  getAdminOrders(status?: OrderStatus): Observable<SellerOrderResponse[]> {
+    let params = new HttpParams();
+    if (status) {
+      params = params.set('status', status);
+    }
+    return this.http.get<any[]>(`${this.baseUrl}/v1/admin/products/orders`, { params }).pipe(
+      map((res) => snakeToCamelKeys<SellerOrderResponse[]>(res))
+    );
+  }
 }

@@ -124,11 +124,11 @@ import { AuctionTimerPipe } from '../../pipes/auction-timer.pipe';
               <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-xs space-y-1">
                 <div class="flex justify-between text-slate-400">
                   <span>Bắt đầu:</span>
-                  <span class="font-mono text-slate-200">{{ product.startTime ? (product.startTime | date:'dd/MM/yyyy HH:mm') : 'Ngay sau khi duyệt' }}</span>
+                  <span class="font-mono text-slate-200">{{ product.startTime ? (product.startTime | date:'dd/MM/yyyy HH:mm':'+0700') : 'Ngay sau khi duyệt' }}</span>
                 </div>
                 <div class="flex justify-between text-slate-400">
                   <span>Kết thúc:</span>
-                  <span class="font-mono text-slate-200">{{ product.endTime ? (product.endTime | date:'dd/MM/yyyy HH:mm') : 'N/A' }}</span>
+                  <span class="font-mono text-slate-200">{{ product.endTime ? (product.endTime | date:'dd/MM/yyyy HH:mm':'+0700') : 'N/A' }}</span>
                 </div>
               </div>
 

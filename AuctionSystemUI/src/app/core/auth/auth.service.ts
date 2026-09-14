@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map, throwError } from 'rxjs';
 import { API_ENDPOINTS } from '../config/api-endpoints.config';
 import { UserSession, UserRole } from '../../shared/models/enums.model';
-import { snakeToCamelKeys } from '../utils/case-converter.util';
+import { snakeToCamelKeys, camelToSnakeKeys } from '../utils/case-converter.util';
 
 export interface AuthResponse {
   accessToken: string;
@@ -74,7 +74,7 @@ export class AuthService {
       return throwError(() => new Error('No refresh token available'));
     }
 
-    return this.http.post<any>(API_ENDPOINTS.AUTH_REFRESH, { refreshToken: token }).pipe(
+    return this.http.post<any>(API_ENDPOINTS.AUTH_REFRESH, camelToSnakeKeys({ refreshToken: token })).pipe(
       map((res) => snakeToCamelKeys<AuthResponse>(res)),
       tap((camelRes) => {
         if (camelRes.accessToken) {
