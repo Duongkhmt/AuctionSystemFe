@@ -41,6 +41,19 @@ import { AuthModalComponent } from '../../../../shared/components/auth-modal/aut
 
     @if (loading() && !product()) {
       <div class="h-96 rounded-3xl bg-slate-900/40 border border-slate-800 animate-pulse"></div>
+    } @else if (!product()) {
+      <div class="py-20 bg-slate-900/80 border border-slate-800 rounded-3xl text-center flex flex-col items-center justify-center p-8 space-y-4 shadow-2xl max-w-2xl mx-auto">
+        <div class="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 text-3xl">
+          🔍
+        </div>
+        <h3 class="text-xl font-extrabold text-white">Sản phẩm không tồn tại</h3>
+        <p class="text-xs text-slate-400 max-w-md leading-relaxed">
+          Sản phẩm bạn tìm kiếm không tồn tại, đã bị hủy hoặc mã thầu chưa được duyệt.
+        </p>
+        <a routerLink="/" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all">
+          ← Quay lại Sàn Đấu Giá
+        </a>
+      </div>
     } @else if (product()) {
       <div class="space-y-8 max-w-7xl mx-auto">
         <!-- Thanh Điều Hướng Trên Cùng -->
@@ -375,6 +388,10 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       },
       error: () => {
         if (isInitial) this.loading.set(false);
+        if (this.pollTimer) {
+          clearInterval(this.pollTimer);
+          this.pollTimer = null;
+        }
       }
     });
   }
