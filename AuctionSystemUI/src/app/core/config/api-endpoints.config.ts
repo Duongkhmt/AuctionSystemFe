@@ -1,4 +1,5 @@
 export const API_BASE_URL = 'http://localhost:8080';
+export const PAYMENT_API_BASE_URL = 'http://localhost:8082';
 
 export const API_ENDPOINTS = {
   // Auth Endpoints
@@ -6,6 +7,12 @@ export const API_ENDPOINTS = {
   AUTH_LOGIN: `${API_BASE_URL}/v1/auth/login`,
   AUTH_REFRESH: `${API_BASE_URL}/v1/auth/refresh`,
   AUTH_LOGOUT: `${API_BASE_URL}/v1/auth/logout`,
+
+  // Virtual Wallet Endpoints (Payment Service Port 8082)
+  WALLET_ME: `${PAYMENT_API_BASE_URL}/v1/wallets/me`,
+  WALLET_DEPOSIT: `${PAYMENT_API_BASE_URL}/v1/wallets/me/deposit`,
+  WALLET_WITHDRAW: `${PAYMENT_API_BASE_URL}/v1/wallets/me/withdraw`,
+  WALLET_TRANSACTIONS: `${PAYMENT_API_BASE_URL}/v1/wallets/me/transactions`,
 
   // Public Marketplace Endpoints
   PUBLIC_PRODUCTS: `${API_BASE_URL}/v1/products`,
@@ -38,3 +45,4 @@ export const API_ENDPOINTS = {
   BIDDING_BUY_NOW: (auctionId: number, bidderId: number) => `${API_BASE_URL}/v1/auctions/${auctionId}/bids/buy-now?bidderId=${bidderId}`,
   BIDDING_HISTORY: (auctionId: number) => `${API_BASE_URL}/v1/auctions/${auctionId}/bids`,
 };
+
