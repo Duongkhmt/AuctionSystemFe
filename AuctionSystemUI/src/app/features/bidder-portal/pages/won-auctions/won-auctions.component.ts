@@ -10,6 +10,7 @@ import { WonAuctionResponse, OrderStatus } from '../../../../shared/models/order
 import { StatusBadgeComponent } from '../../../../shared/components/status-badge/status-badge.component';
 import { CheckoutModalComponent } from '../../components/checkout-modal/checkout-modal.component';
 import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
+import { WalletService } from '../../../../core/services/wallet.service';
 
 /**
  * ====================================================================================
@@ -23,30 +24,37 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
   template: `
     <div class="space-y-6 max-w-7xl mx-auto px-4 py-4">
       
-      <!-- Sub-Header View Switcher Bar -->
-      <div class="flex items-center gap-3">
+      <!-- Sub-Header View Switcher Bar (Tài Khoản Của Tôi) -->
+      <div class="flex items-center gap-3 border-b border-emerald-950/80 pb-4">
         <a
-          routerLink="/my-bids"
+          routerLink="/my-bids/won"
           class="px-5 py-2.5 rounded-xl text-xs font-black bg-[#c5a059] text-slate-950 shadow-lg shadow-[#c5a059]/20 transition-all flex items-center gap-2 cursor-pointer"
         >
-          <span>{{ langService.translate('nav.wonProducts') }}</span>
+          <span>🏆 {{ langService.translate('nav.wonProducts') }}</span>
+        </a>
+
+        <a
+          routerLink="/my-bids/wallet"
+          class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-slate-900/60 text-slate-400 border border-emerald-900/40 hover:text-white hover:border-emerald-500 transition-all flex items-center gap-2 cursor-pointer"
+        >
+          <span>👛 Ví Ảo & Giao Dịch</span>
         </a>
 
         <a
           routerLink="/seller"
           class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-slate-900/60 text-slate-400 border border-emerald-900/40 hover:text-white hover:border-[#c5a059] transition-all flex items-center gap-2 cursor-pointer"
         >
-          <span>{{ langService.translate('nav.myListedProducts') }}</span>
+          <span>📦 Đơn Hàng Đã Bán</span>
         </a>
       </div>
 
-      <!-- Header Banner Tiêu Đề -->
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2 border-t border-emerald-900/30">
+      <!-- Header Banner Tiêu Đề & Thẻ Thông Tin Ví / Gậy Phạt -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-slate-950 border border-emerald-900/40 shadow-xl backdrop-blur-md">
         <div>
           <span class="text-[11px] font-bold tracking-widest text-[#c5a059] uppercase">
             {{ langService.translate('account.userHeader') }} {{ (userSession.currentUser()?.name || 'VĂN DƯƠNG') | uppercase }}
           </span>
-          <h1 class="text-3xl font-serif font-bold text-white tracking-tight mt-1">
+          <h1 class="text-2xl font-serif font-bold text-white tracking-tight mt-1">
             {{ langService.translate('account.wonLotsTitle') }}
           </h1>
           <p class="text-xs text-slate-400 mt-1">
@@ -54,12 +62,36 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
           </p>
         </div>
 
-        <a
-          routerLink="/"
-          class="text-xs text-slate-300 hover:text-[#c5a059] transition-colors flex items-center gap-1 font-medium"
-        >
-          <span>{{ langService.translate('account.continueBidding') }}</span>
-        </a>
+        <!-- Thẻ Thống Kê Nhanh Ví Ảo & Gậy Phạt Vi Phạm -->
+        <div class="flex items-center gap-3">
+          <a
+            routerLink="/my-bids/wallet"
+            class="px-4 py-2.5 rounded-xl bg-slate-950 border border-emerald-500/30 hover:border-emerald-400 transition-all flex items-center gap-2.5 shadow-md active:scale-95 group"
+          >
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-amber-400 text-sm">
+              👛
+            </div>
+            <div>
+              <p class="text-[10px] text-slate-400 uppercase font-semibold">Số Dư Ví Ảo</p>
+              <p class="text-sm font-black text-emerald-400 font-mono">
+                {{ (walletService.wallet()?.balance || 0) | currencyVnd }}
+              </p>
+            </div>
+          </a>
+
+          <div
+            class="px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center gap-2.5 shadow-md"
+            title="Số gậy vi phạm quy chế đấu giá (tối đa 3 gậy trước khi khóa tài khoản)"
+          >
+            <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-sm">
+              ⚠️
+            </div>
+            <div>
+              <p class="text-[10px] text-slate-400 uppercase font-semibold">Vi Phạt Cọc</p>
+              <p class="text-sm font-black text-amber-400 font-mono">0/3 Gậy</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Bộ Lọc Thanh Tab Trạng Thái -->
@@ -183,6 +215,35 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
                     <span class="text-xs font-bold text-emerald-400">🏆 WINNER</span>
                   </div>
 
+                  <!-- Escrow Order Status Stepper -->
+                  <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 space-y-2">
+                    <div class="flex items-center justify-between text-[10px] font-semibold">
+                      <span class="text-amber-400">Tiến trình Escrow:</span>
+                      <span class="font-mono text-slate-400">
+                        {{ item.status === 'UNPAID' ? 'Bước 1/4' : item.status === 'PAID' ? 'Bước 2/4' : item.status === 'SHIPPING' ? 'Bước 3/4' : 'Hoàn tất' }}
+                      </span>
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                      <div [class]="item.status === 'UNPAID' || item.status === 'PAID' || item.status === 'SHIPPING' || item.status === 'COMPLETED' ? 'bg-amber-400' : 'bg-slate-800'" class="h-1.5 flex-1 rounded-full"></div>
+                      <div [class]="item.status === 'PAID' || item.status === 'SHIPPING' || item.status === 'COMPLETED' ? 'bg-amber-400' : 'bg-slate-800'" class="h-1.5 flex-1 rounded-full"></div>
+                      <div [class]="item.status === 'SHIPPING' || item.status === 'COMPLETED' ? 'bg-amber-400' : 'bg-slate-800'" class="h-1.5 flex-1 rounded-full"></div>
+                      <div [class]="item.status === 'COMPLETED' ? 'bg-emerald-400' : 'bg-slate-800'" class="h-1.5 flex-1 rounded-full"></div>
+                    </div>
+
+                    <div class="text-[11px] text-slate-300">
+                      @if (item.status === 'UNPAID') {
+                        <span class="text-rose-400">⚠️ Chưa thanh toán. Vui lòng thanh toán trước khi quá hạn!</span>
+                      } @else if (item.status === 'PAID') {
+                        <span class="text-amber-300">🔒 Tiền đã gửi Escrow. Chờ người bán gửi hàng.</span>
+                      } @else if (item.status === 'SHIPPING') {
+                        <span class="text-sky-300">🚚 Hàng đang vận chuyển. Nhớ bấm xác nhận khi nhận được!</span>
+                      } @else if (item.status === 'COMPLETED') {
+                        <span class="text-emerald-400">✅ Đã giải ngân Escrow cho người bán. Giao dịch thành công!</span>
+                      }
+                    </div>
+                  </div>
+
                   @if (item.shippingAddress) {
                     <div class="p-3 bg-emerald-950/20 border border-emerald-800/30 rounded-xl space-y-1 text-xs text-slate-300">
                       <p class="text-[10px] text-[#c5a059] font-bold flex items-center gap-1">📍 {{ langService.translate('checkout.shippingAddress') }}:</p>
@@ -213,15 +274,15 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
                     [disabled]="actionLoading()"
                     class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2"
                   >
-                    {{ langService.translate('won.confirmReceivedBtn') }}
+                    ✅ {{ langService.translate('won.confirmReceivedBtn') }} (Giải ngân Escrow)
                   </button>
                 } @else if (item.status === 'PAID') {
                   <div class="p-3 bg-[#050b08] rounded-xl border border-emerald-900/40 text-center text-xs text-[#c5a059] font-semibold flex items-center justify-center gap-2">
-                    <span>⏳</span> In transit / Pending shipment...
+                    <span>⏳</span> Tiền giữ Escrow - Đang chờ người bán giao hàng...
                   </div>
                 } @else if (item.status === 'COMPLETED') {
-                  <div class="p-3 bg-[#050b08] rounded-xl border border-emerald-900/40 text-center text-xs text-slate-400 font-semibold flex items-center justify-center gap-2">
-                    <span>🎉</span> Order completed!
+                  <div class="p-3 bg-[#050b08] rounded-xl border border-emerald-900/40 text-center text-xs text-emerald-400 font-semibold flex items-center justify-center gap-2">
+                    <span>🎉</span> Đơn hàng hoàn tất!
                   </div>
                 }
               </div>
@@ -241,6 +302,7 @@ import { CurrencyVndPipe } from '../../../../shared/pipes/currency-vnd.pipe';
 })
 export class WonAuctionsComponent implements OnInit {
   private orderService = inject(OrderService);
+  walletService = inject(WalletService);
   authService = inject(AuthService);
   userSession = inject(UserSessionService);
   langService = inject(LanguageService);
@@ -260,6 +322,7 @@ export class WonAuctionsComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchWonAuctions();
+    this.walletService.getWallet().subscribe({ next: () => {}, error: () => {} });
   }
 
   fetchWonAuctions(): void {
