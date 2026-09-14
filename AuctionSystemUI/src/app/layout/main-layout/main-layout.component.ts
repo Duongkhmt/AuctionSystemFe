@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit } from '@angular/core';
+import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { WalletService } from '../../core/services/wallet.service';
 import { LanguageService } from '../../core/services/language.service';
 import { ToastContainerComponent } from '../../shared/components/toast-container/toast-container.component';
 
@@ -13,7 +14,7 @@ import { ToastContainerComponent } from '../../shared/components/toast-container
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent, CurrencyPipe],
   template: `
     <div class="min-h-screen flex flex-col bg-[#09110d] text-slate-100 font-sans antialiased">
       <app-toast-container />
@@ -23,7 +24,7 @@ import { ToastContainerComponent } from '../../shared/components/toast-container
         <div class="max-w-7xl mx-auto flex items-center justify-between">
           
           <!-- Logo & Brand Link -->
-          <div class="flex items-center gap-10">
+          <div class="flex items-center gap-8">
             <a routerLink="/" [queryParams]="{ categoryId: 'ALL' }" class="flex items-center gap-2 text-xl font-serif tracking-tight text-white group">
               <span class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-[#c5a059] text-base group-hover:scale-105 transition-transform">
                 ⚖
@@ -32,7 +33,7 @@ import { ToastContainerComponent } from '../../shared/components/toast-container
             </a>
 
             <!-- Menu Navigation Links -->
-            <nav class="hidden lg:flex items-center gap-2 text-xs font-semibold text-slate-300">
+            <nav class="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-slate-300">
               <a
                 routerLink="/"
                 [queryParams]="{ categoryId: 'ALL' }"
@@ -86,7 +87,7 @@ import { ToastContainerComponent } from '../../shared/components/toast-container
             </nav>
           </div>
 
-          <!-- Right Action Bar: Language Switcher (VN/EN) & Login/Register CTA Buttons -->
+          <!-- Right Action Bar: Language Switcher (VN/EN) & User Profile -->
           <div class="flex items-center gap-4">
             
             <!-- 🌐 Language Switcher Toggle (VN / EN) -->
@@ -158,13 +159,24 @@ import { ToastContainerComponent } from '../../shared/components/toast-container
     </div>
   `
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit {
   authService = inject(AuthService);
+  walletService = inject(WalletService);
   langService = inject(LanguageService);
   private router = inject(Router);
+
+  ngOnInit(): void {
+    if (this.authService.isLoggedIn() && !this.authService.hasRole('ADMIN')) {
+      this.walletService.getWallet().subscribe({
+        next: () => {},
+        error: () => {}
+      });
+    }
+  }
 
   onLogout(): void {
     this.authService.logout(true);
     this.router.navigate(['/']);
   }
 }
+
