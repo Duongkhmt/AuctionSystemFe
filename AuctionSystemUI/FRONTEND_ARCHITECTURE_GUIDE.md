@@ -29,8 +29,9 @@ AuctionSystemUI/
 │   └── frontend/
 │       ├── 01-project-overview.md
 │       ├── 02-core.md
-│       ├── ...
-│       └── FRONTEND_ARCHITECTURE_GUIDE.md
+│       └── ...
+├── FRONTEND_ARCHITECTURE_GUIDE.md # Tài liệu kiến trúc toàn diện cho Backend Dev
+├── README.md                      # Tài liệu tổng quan & Hướng dẫn cài đặt dự án
 ├── public/                        # Static assets (Favicon, Logo, Images)
 ├── src/
 │   ├── index.html                 # Single Page Application HTML duy nhất
