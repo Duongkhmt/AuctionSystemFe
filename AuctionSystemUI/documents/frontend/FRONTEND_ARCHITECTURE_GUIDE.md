@@ -913,15 +913,27 @@ Dưới đây là bảng phân tích toàn bộ **54 file TypeScript** trong cod
 ### J. FEATURES — ADMIN MODERATION & AUTH
 
 #### 50. `src/app/features/admin-moderation/admin.routes.ts`
-* **Routes**: `/admin` (PendingApprovalComponent).
+* **Routes (Guard: `roleGuard(['ADMIN'])`)**:
+  - `/admin`: `PendingApprovalComponent` (Kiểm duyệt bài đăng)
+  - `/admin/finance`: `FinancialDashboardComponent` (Két Escrow Sàn & Dòng tiền)
+  - `/admin/categories`: `CategoryManagementComponent` (Quản lý danh mục)
+  - `/admin/users`: `UserManagementComponent` (Quản lý người dùng)
 
-#### 51. `src/app/features/admin-moderation/services/admin-api.service.ts`
-* **Class**: `AdminApiService`
-* **Functions**: `getPendingProducts()`, `approveProduct(id)`, `rejectProduct(id, rejectDTO)`.
+#### 51. `src/app/features/admin-moderation/services/admin-api.service.ts` & `OrderService.java`
+* **Class**: `AdminApiService` & `OrderService`
+* **Functions**: `getPendingProducts()`, `approveProduct(id)`, `rejectProduct(id, rejectDTO)`, `getAllCategories()`, `createCategory(request)`, `updateCategory(id, request)`, `deleteCategory(id)`, `getAllUsers()`, `updateUserStatus(id, request)`, `getAdminOrders(status)`.
 
 #### 52. `src/app/features/admin-moderation/pages/pending-approval/pending-approval.component.ts`
 * **Component**: `PendingApprovalComponent`
 * **Functions**: `approve(id)`, `openRejectModal(id)`, `confirmReject()`.
+
+#### 52b. `src/app/features/admin-moderation/pages/financial-dashboard/financial-dashboard.component.ts`
+* **Component**: `FinancialDashboardComponent`
+* **Vai trò**: Quản lý Két Escrow Sàn đấu giá, theo dõi dòng tiền giữ hộ, giải ngân cho Seller và lịch sử đơn hàng theo múi giờ UTC+7.
+
+#### 52c. `src/app/core/services/wallet.service.ts` & `WalletComponent`
+* **Class & Component**: `WalletService` & `WalletComponent` (`/wallet`)
+* **Functions**: `getWallet()`, `deposit()`, `withdraw()`, `getTransactions()`. Dành cho người dùng nạp, rút tiền ảo và xem nhật ký giao dịch.
 
 #### 53. `src/app/features/auth/auth.routes.ts`
 * **Routes**: `/login` (LoginComponent), `/register` (RegisterComponent).

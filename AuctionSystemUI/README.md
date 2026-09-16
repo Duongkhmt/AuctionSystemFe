@@ -165,10 +165,14 @@ Dữ liệu gửi từ Spring Boot Backend sử dụng định dạng `snake_cas
 | `/seller/orders`   | `SellerOrdersComponent`  | Thống kê doanh thu & Quản lý danh sách đơn hàng đã bán được              | `GET /v1/sellers/{id}/orders`                                                              |
 | `-- (Modal)`       | `ShipModalComponent`     | Popup chọn bưu cục (GHTK, GHN...) và nhập Mã vận đơn xuất hàng           | `PUT /v1/sellers/{id}/orders/{orderId}/ship`                                               |
 
-### 3. Routes Quản Trị Viên (Admin Routes)
-| Route Đường Dẫn | Component Màn Hình         | Mô Tả & Nghiệp Vụ                                             | API Backend Kết Nối                                                                                     |
-|:----------------|:---------------------------|:--------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------|
-| `/admin`        | `PendingApprovalComponent` | Màn hình kiểm duyệt danh sách các bài đăng sản phẩm chờ duyệt | `GET /v1/admin/products/pending`, `PUT /admin/products/{id}/approve`, `PUT /admin/products/{id}/reject` |
+### 3. Routes Quản Trị Viên & Ví Ảo (Admin & Wallet Routes)
+| Route Đường Dẫn    | Component Màn Hình            | Mô Tả & Nghiệp Vụ                                             | API Backend Kết Nối                                                                                           |
+|:-------------------|:------------------------------|:--------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------|
+| `/admin`           | `PendingApprovalComponent`    | Màn hình kiểm duyệt danh sách các bài đăng sản phẩm chờ duyệt | `GET /v1/admin/products/pending`, `PUT /v1/admin/products/{id}/approve`, `PUT /v1/admin/products/{id}/reject` |
+| `/admin/finance`   | `FinancialDashboardComponent` | Bảng cân đối tài chính & Quản lý Két Escrow Sàn đấu giá       | `GET /v1/admin/products/orders`                                                                               |
+| `/admin/categories`| `CategoryManagementComponent` | Quản lý danh mục sản phẩm (Thêm, Sửa, Ẩn/Hiện)               | `GET /v1/admin/products/categories`, `POST /v1/admin/products/categories`, `PUT /v1/admin/products/categories/{id}` |
+| `/admin/users`     | `UserManagementComponent`     | Quản lý tài khoản thành viên (Khóa / Mở khóa tài khoản)       | `GET /v1/admin/products/users`, `PUT /v1/admin/products/users/{id}/status`                                   |
+| `/wallet`          | `WalletComponent`             | Ví ảo người dùng (Nạp tiền, Rút tiền, Lịch sử giao dịch)      | `GET /v1/wallets/me`, `POST /v1/wallets/me/deposit`, `POST /v1/wallets/me/withdraw`, `GET /v1/wallets/me/transactions` |
 
 ---
 

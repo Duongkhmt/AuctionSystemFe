@@ -43,7 +43,8 @@ Sơ đồ định tuyến tổng thể trong `app.routes.ts`:
 └── admin/ (AdminLayoutComponent + authGuard + roleGuard(['ADMIN']))
     └── (Lazy Load ADMIN_ROUTES)
         ├── '' -> PendingApprovalComponent (Duyệt bài đăng)
-        ├── categories -> CategoryManagementComponent (Quản lý thể loại / danh mục)
+        ├── finance -> FinancialDashboardComponent (Két Escrow Sàn & Dòng tiền)
+        ├── categories -> CategoryManagementComponent (Quản lý danh mục)
         └── users -> UserManagementComponent (Quản lý người dùng)
 ```
 
