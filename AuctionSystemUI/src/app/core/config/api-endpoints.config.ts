@@ -1,5 +1,5 @@
 export const API_BASE_URL = 'http://localhost:8080';
-export const PAYMENT_API_BASE_URL = 'http://localhost:8082';
+export const PAYMENT_API_BASE_URL = API_BASE_URL;
 
 export const API_ENDPOINTS = {
   // Auth Endpoints
@@ -8,7 +8,7 @@ export const API_ENDPOINTS = {
   AUTH_REFRESH: `${API_BASE_URL}/v1/auth/refresh`,
   AUTH_LOGOUT: `${API_BASE_URL}/v1/auth/logout`,
 
-  // Virtual Wallet Endpoints (Payment Service Port 8082)
+  // Virtual Wallet Endpoints (Gọi qua Port 8080 của auction-service uỷ quyền)
   WALLET_ME: `${PAYMENT_API_BASE_URL}/v1/wallets/me`,
   WALLET_DEPOSIT: `${PAYMENT_API_BASE_URL}/v1/wallets/me/deposit`,
   WALLET_WITHDRAW: `${PAYMENT_API_BASE_URL}/v1/wallets/me/withdraw`,
